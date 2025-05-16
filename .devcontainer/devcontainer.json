@@ -1,0 +1,35 @@
+{
+    "name": "Java Development Environment",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            "USER_UID": "2000",
+            "USER_GID": "2000",
+            "USERNAME": "fft"
+        },
+        "platform": "linux/amd64"
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {}
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "vscjava.vscode-java-pack",
+                "redhat.java",
+                "vscjava.vscode-java-debug",
+                "vscjava.vscode-java-test",
+                "visualstudioexptteam.vscodeintellicode"
+            ]
+        }
+    },
+    "remoteUser": "fft",
+    "mounts": [
+        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind",
+        "source=${env:HOME}/.Xauthority,target=/home/fft/.Xauthority,type=bind"
+    ],
+    "runArgs": [
+        "--env=DISPLAY=${env:DISPLAY}",
+        "--platform=linux/amd64"
+    ]
+} 
