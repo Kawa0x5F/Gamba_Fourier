@@ -1,4 +1,4 @@
-package Fourier;
+package Fourier.controller;
 
 public class FourierController {
 
