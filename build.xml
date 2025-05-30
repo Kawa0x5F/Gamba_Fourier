@@ -7,7 +7,7 @@
 	<property name="destdir" value="./Classes" />
 	<property name="docdir" value="./JavaDoc" />
 	<property name="instdir" value="./Fourier.app/Contents/Resources/Java" />
-	<property name="copyright" value="Copyright 2008-2020 AOKI Atsushi. All Rights Reserved." />
+	<property name="copyright" value="Copyright 2025 Kawasaki Yuichi All Rights Reserved." />
 	<property name="zipname" value="${ant.project.name}" />
 
 	<target name="all" depends="jar" description="build all">
