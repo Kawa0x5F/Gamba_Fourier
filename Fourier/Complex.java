@@ -105,4 +105,24 @@ public class Complex {
             expReal * Math.sin(c.imag)
         );
     }
+
+/**
+     * この複素数の文字列表現を返す
+     * @return この複素数を文字列で表現した文字列
+     */
+    @Override
+    public String toString() {
+        if (imag == 0) {
+            return String.valueOf(real);
+        }
+        if (real == 0) {
+            return String.valueOf(imag) + "i";
+        }
+        // 虚部が負の場合は、符号を "-" にして絶対値を追加
+        if (imag < 0) {
+            return real + " - " + (-imag) + "i";
+        }
+        // 虚部が正の場合は、"+" でつなぐ
+        return real + " + " + imag + "i";
+    }
 }
