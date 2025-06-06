@@ -8,7 +8,7 @@ ARG USER_GID=2000
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Fix GPG and install necessary packages
+# Install necessary packages including bash-completion
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     gnupg \
@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ant \
     make \
     git \
+    bash-completion \
     x11-apps \
     libxext6 \
     libxrender1 \
@@ -36,7 +37,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
-# Switch to the specified user for the Java installation
+# Switch to the specified user
 USER $USERNAME
 WORKDIR /home/$USERNAME
 
@@ -46,6 +47,9 @@ RUN wget --no-check-certificate -c --header "Cookie: oraclelicense=accept-secure
     && sudo tar -xzf jdk-24_linux-x64_bin.tar.gz -C /usr/lib/jvm \
     && rm jdk-24_linux-x64_bin.tar.gz \
     && sudo ln -s /usr/lib/jvm/jdk-24.0.* /usr/lib/jvm/java-24-oracle
+
+# Add bash completion to .bashrc
+RUN echo "source /etc/bash_completion" >> ~/.bashrc
 
 # Set Java environment variables
 ENV JAVA_HOME=/usr/lib/jvm/java-24-oracle
