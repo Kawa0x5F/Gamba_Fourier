@@ -1,5 +1,6 @@
-public class FFT {
+public class DFT {
 
+    // 複素数クラス
     public static class Complex {
         public double re;
         public double im;
@@ -13,47 +14,37 @@ public class FFT {
             return new Complex(this.re + b.re, this.im + b.im);
         }
 
-        public Complex sub(Complex b) {
-            return new Complex(this.re - b.re, this.im - b.im);
-        }
-
         public Complex mul(Complex b) {
             double real = this.re * b.re - this.im * b.im;
             double imag = this.re * b.im + this.im * b.re;
             return new Complex(real, imag);
         }
 
+        @Override
         public String toString() {
             return String.format("%.3f%+.3fi", re, im);
         }
     }
 
-    public static Complex[] fft(Complex[] x) {
+    // DFTの実装（FFTを使わない）
+    public static Complex[] dft(Complex[] x) {
         int N = x.length;
-        
-        if (N == 1) return x;
-
-        Complex[] even = new Complex[N / 2];
-        Complex[] odd = new Complex[N / 2];
-        for (int i = 0; i < N / 2; i++) {
-            even[i] = x[2 * i];
-            odd[i] = x[2 * i + 1];
-        }
-
-        Complex[] Feven = fft(even);
-        Complex[] Fodd = fft(odd);
-
         Complex[] result = new Complex[N];
-        for (int k = 0; k < N / 2; k++) {
-            double angle = -2 * Math.PI * k / N;
-            Complex wk = new Complex(Math.cos(angle), Math.sin(angle));
-            Complex t = wk.mul(Fodd[k]);
-            result[k] = Feven[k].add(t);
-            result[k + N / 2] = Feven[k].sub(t);
+
+        for (int k = 0; k < N; k++) {
+            Complex sum = new Complex(0, 0);
+            for (int n = 0; n < N; n++) {
+                double angle = -2 * Math.PI * k * n / N;
+                Complex w = new Complex(Math.cos(angle), Math.sin(angle)); // e^{-j2πkn/N}
+                sum = sum.add(x[n].mul(w));
+            }
+            result[k] = sum;
         }
+
         return result;
     }
 
+    // メイン関数
     public static void main(String[] args) {
         double[] input = {1, 0, 0, 1, 0, 0, 0, 1};
         Complex[] x = new Complex[input.length];
@@ -61,8 +52,8 @@ public class FFT {
             x[i] = new Complex(input[i], 0);
         }
 
-        Complex[] result = fft(x);
-        System.out.println("FFT結果:");
+        Complex[] result = dft(x);
+
         for (Complex c : result) {
             System.out.println(c);
         }
