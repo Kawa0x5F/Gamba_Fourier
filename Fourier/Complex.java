@@ -106,7 +106,25 @@ public class Complex {
         );
     }
 
-/**
+    /**
+     * この複素数の実数と虚数を反転させた結果を、新しい {@code Complex} オブジェクトとして返す
+     * @return 富豪を反転させた新規{@code Complex} オブジェクト
+     */
+    public Complex conjugate() {
+        return new Complex(this.real, -this.imag);
+    }
+
+    /**
+     * この複素数をスカラー値で乗算します。
+     *
+     * @param alpha 乗算するスカラー値（実数）
+     * @return      この複素数を {@code alpha} 倍した新しい {@code Complex} オブジェクト
+     */
+    public Complex scale(double alpha){
+        return new Complex(this.real * alpha, this.imag * alpha);
+    }
+
+    /**
      * この複素数の文字列表現を返す
      * @return この複素数を文字列で表現した文字列
      */

@@ -7,53 +7,50 @@ public class FourierModel1D extends FourierModel {
 
 	private FourierView1D fourierView1D;
 
-	/**
-     * 高速フーリエ変換 (FFT) を実行するメソッド (クーリー・テューキーのアルゴリズムに基づく再帰的実装)
-     *
-     * @param x 入力となる複素数の配列。要素数は2のべき乗である必要があります。
-     * @return FFT変換後の複素数の配列。
-     * @throws IllegalArgumentException 入力配列の長さが0の場合、または2のべき乗でない場合。
-     */
     public static Complex[] fft(Complex[] x) {
         int N = x.length;
+        
+        if (N == 1) return new Complex[]{x[0]};
 
-        // 基底ケース: N=1
-        if (N == 1) {
-            return new Complex[]{x[0]};
+        Complex[] even = new Complex[N / 2];
+        Complex[] odd = new Complex[N / 2];
+        for (int i = 0; i < (N / 2); i++) {
+            even[i] = x[2 * i];
+            odd[i] = x[2 * i + 1];
         }
 
-        // 入力長が0または2のべき乗でない場合のチェック
-        if (N == 0) {
-            throw new IllegalArgumentException("入力配列の長さは0であってはなりません。");
-        }
-        if ((N & (N - 1)) != 0) { // Nが2のべき乗かどうかのビット演算チェック
-            throw new IllegalArgumentException("入力配列の長さは2のべき乗である必要があります。現在の長さ: " + N);
-        }
-
-        // 偶数番目の要素と奇数番目の要素に分割
-        Complex[] evenTerms = new Complex[N / 2];
-        Complex[] oddTerms = new Complex[N / 2];
-        for (int k = 0; k < N / 2; k++) {
-            evenTerms[k] = x[2 * k];
-            oddTerms[k] = x[2 * k + 1];
-        }
-
-        // 再帰的にFFTを適用
-        Complex[] fftEven = fft(evenTerms);
-        Complex[] fftOdd = fft(oddTerms);
-
-        // 結果を格納する配列
+        Complex[] Feven = fft(even);         // 現在のNに対する、各偶数行でのFFTの出力値を格納する配列Feven
+        Complex[] Fodd = fft(odd);           // 現在のNに対する、各奇数行でのFFTの出力値を格納する配列Feven
+        
+        // バタフライ演算の実装
         Complex[] result = new Complex[N];
-
-        // 結合ステップ: X_k = FFT_even_k + W_N^k * FFT_odd_k
-        //              X_{k+N/2} = FFT_even_k - W_N^k * FFT_odd_k
         for (int k = 0; k < N / 2; k++) {
-            double angle = -2 * Math.PI * k / N;
-            Complex Wk = Complex.exp(new Complex(0, angle)); // 回転因子 W_N^k = e^(-2πik/N)
-            Complex term = Wk.mul(fftOdd[k]);
+            double angle = -2 * Math.PI * k / N;                         // 単位円上のk番目の点(0<= k < N/2、kは整数)と原点を結んだ時の角度
+            Complex wk = new Complex(Math.cos(angle), Math.sin(angle));  // angleに対する回転因子を算出
 
-            result[k]         = fftEven[k].add(term);
-            result[k + N / 2] = fftEven[k].sub(term);
+            // N点ごと(各行ごと)に求めたFFTを合成する
+            Complex t = wk.mul(Fodd[k]);  // 奇数成分のDFT(FFT)に回転因子wkをかけることで、現在のN点分割したときの奇数行目を求める
+            result[k] = Feven[k].add(t);  // 現在のN点分割したときの偶数行目(偶数成分のDFT)にtを足す
+            result[k + N / 2] = Feven[k].sub(t); // 偶数行目(偶数成分のDFT)からtを引く
+            // kとk+N/2の要素の結果を算出する理由は、入力信号時点でのN(今回の場合、N=8)をN=1となるまで分割した際、
+            // 元々のN(入力時点でのN)点での入力の順番をビットリバースした時の順に合わせるため(バタフライ演算した時の出力のペア)
+        }
+        return result;
+    }
+
+    public static Complex[] ifft(Complex[] x) {
+        int N = x.length;
+
+        Complex[] x_conjugate = new Complex[N];
+        for(int i = 0; i < N; i++){
+            x_conjugate[i] = x[i].conjugate();
+        }
+
+        Complex[] y = fft(x_conjugate);
+        
+        Complex[] result = new Complex[N];
+        for(int i = 0; i < N; i++){
+            result[i] = y[i].conjugate().scale(1.0 / N);
         }
         return result;
     }
