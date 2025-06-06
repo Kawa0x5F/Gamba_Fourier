@@ -2,6 +2,7 @@ package Fourier.view;
 
 import Fourier.model.FourierModel1D;
 import javax.swing.*;
+import Fourier.FourierData;
 
 public class FourierView1D {
     public static void main(String[] args) {
