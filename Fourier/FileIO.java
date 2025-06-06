@@ -1,5 +1,8 @@
 package Fourier;
 
+import java.awt.image.BufferedImage;
+import Utility.ImageUtility;
+
 public class FileIO {
 
     public static double[] dataChirpSignal()
