@@ -1,4 +1,4 @@
-package Fourier;
+package Fourier; // Fourierパッケージに属するMenuクラスを定義
 
 import Fourier.controller.FourierController; // FourierControllerクラスをインポート
 import javax.swing.*; // GUI部品を使えるようにする
@@ -7,6 +7,16 @@ import java.util.stream.Stream; // Streamを使えるようにする
 
 public class Menu {
 
+    /**
+     * メニューを表示するためのメソッドを呼び出す
+     * このメソッドは、マウスカーソルの位置にポップアップメニューを表示し、
+     * 「data Entry」や「data Storage」などのメニュー項目を提供する。
+     * 各メニュー項目は、クリックされたときに特定のアクションを実行する。
+     * 例えば、「data Entry」をクリックすると、FourierController.Indataの値が反転し、
+     * 現在の値がコンソールに表示される。また、callFileIOメソッドが呼び出され、
+     * データの読み込みが行われる。
+     */
+
     public void displayMenuScreen() {
         // 現在のマウスカーソルの位置を取得する
         Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
@@ -14,7 +24,7 @@ public class Menu {
         // メニューを作成
         JPopupMenu popupMenu = new JPopupMenu();
 
-        //「Date Entry」メニュー項目
+        // 「Date Entry」メニュー項目
         JMenuItem entryData = new JMenuItem("data Entry");
         // クリックされたときIndataの値を反転
         entryData.addActionListener(e -> {
@@ -25,7 +35,7 @@ public class Menu {
         // ポップアップメニューにこの項目を追加
         popupMenu.add(entryData);
 
-        //「Date Storage」メニュー項目
+        // 「Date Storage」メニュー項目
         JMenuItem storageData = new JMenuItem("data Storage");
         // クリックされたときKeepdataの値を反転
         storageData.addActionListener(e -> {
@@ -41,7 +51,8 @@ public class Menu {
         // // クリックされたときRespectrumの値を反転
         // resetSpectrum.addActionListener(e -> {
         // FourierController.Respectrum = !FourierController.Respectrum; // 反転させる
-        // System.out.println("Respectrum toggled: " + FourierController.Respectrum); // 現在の値を表示
+        // System.out.println("Respectrum toggled: " + FourierController.Respectrum); //
+        // 現在の値を表示
         // callFileIO(); // callFileIOメソッドを呼び出す
         // });
         // // ポップアップメニューにこの項目を追加
@@ -61,6 +72,15 @@ public class Menu {
         });
     }
 
+    /**
+     * ファイル入出力を呼び出すメソッド
+     * このメソッドは、FourierControllerのIndataとKeepdataの値に基づいて、
+     * 入力データの読み込みを行う。
+     * Indataがtrueの場合、input1dDiscreteSignalメソッドを呼び出して入力信号を読み込む。
+     * Keepdataがtrueの場合、output1dDiscreteSignal、outputOperation1dPowerSpectrum、
+     * output1dRestorationDiscreteSignalメソッドを呼び出して信号データを保存する。
+     * このメソッドは、ストリームを使用して条件に合致する場合のみ処理を実行する。
+     */
 
     public void callFileIO() {
         Stream.of(FourierController.Indata) // Indataがtrueまたはfalse
