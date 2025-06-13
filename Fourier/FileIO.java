@@ -12,9 +12,6 @@ import javax.imageio.ImageIO;
 
 public class FileIO {
 
-
-public class FileIO {
-
     public static void main(String[] args) {
         // CSV読み込みテスト
         String csvPath = "step_signal.csv";  // ファイルの入力方法はメニューと相談
