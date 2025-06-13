@@ -1,88 +1,93 @@
-package Fourier;
+package Fourier; // Fourierパッケージに属するMenuクラスを定義
 
 import Fourier.controller.FourierController; // FourierControllerクラスをインポート
-import Fourier.FileIO; // FileIOクラスをインポート
 import javax.swing.*; // GUI部品を使えるようにする
 import java.awt.*; // グラフィックやイベントを扱えるようにする
-import java.awt.event.MouseAdapter; // マウスイベントを扱う
-import java.awt.event.MouseEvent; // マウスイベント情報を保持する
-import java.util.stream.IntStream; // IntStreamを使えるようにする
 import java.util.stream.Stream; // Streamを使えるようにする
 
 public class Menu {
-    
-    public void displayMenuScreen() {
 
-        // マウスの現在位置を取得
+    /**
+     * メニューを表示するためのメソッドを呼び出す
+     * このメソッドは、マウスカーソルの位置にポップアップメニューを表示し、
+     * 「data Entry」や「data Storage」などのメニュー項目を提供する。
+     * 各メニュー項目は、クリックされたときに特定のアクションを実行する。
+     * 例えば、「data Entry」をクリックすると、FourierController.Indataの値が反転し、
+     * 現在の値がコンソールに表示される。また、callFileIOメソッドが呼び出され、
+     * データの読み込みが行われる。
+     */
+
+    public void displayMenuScreen() {
+        // 現在のマウスカーソルの位置を取得する
         Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
 
-        // メニュー用のウィンドウを作成
-        JFrame menuFrame = new JFrame("Menu"); // 「Menu」というタイトルのウィンドウを作る
-        menuFrame.setSize(110, 150); // ウィンドウの大きさを幅100ピクセル、高さ200ピクセルに設定
-        menuFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // ウィンドウを閉じたら、そのウィンドウだけを消す
-        menuFrame.setUndecorated(true); // ウィンドウのタイトルバーや枠を非表示にする
-        menuFrame.setLocation(mouseLocation); // 先ほど取得したマウスの位置にウィンドウを配置する
+        // メニューを作成
+        JPopupMenu popupMenu = new JPopupMenu();
 
-        // メインパネル（縦に4分割）
-        JPanel panel = new JPanel(new GridLayout(3, 1));
+        // 「Date Entry」メニュー項目
+        JMenuItem entryData = new JMenuItem("data Entry");
+        // クリックされたときIndataの値を反転
+        entryData.addActionListener(e -> {
+            FourierController.Indata = !FourierController.Indata; // 反転させる
+            System.out.println("Indata toggled: " + FourierController.Indata); // 現在の値を表示
+            callFileIO(); // callFileIOメソッドを呼び出す
+        });
+        // ポップアップメニューにこの項目を追加
+        popupMenu.add(entryData);
 
-        String[] labels = { "Date Entry", "Date Strage", "Spectrum Reset" }; // セクションに追加するテキストの要素
+        // 「Date Storage」メニュー項目
+        JMenuItem storageData = new JMenuItem("data Storage");
+        // クリックされたときKeepdataの値を反転
+        storageData.addActionListener(e -> {
+            FourierController.Keepdata = !FourierController.Keepdata; // 反転させる
+            System.out.println("Keepdata toggled: " + FourierController.Keepdata); // 現在の値を表示
+            callFileIO(); // callFileIOメソッドを呼び出す
+        });
+        // ポップアップメニューにこの項目を追加
+        popupMenu.add(storageData);
 
-        // Stream API を用いてセクション作成＆追加
-        IntStream.range(0, 3).mapToObj(i -> {
-            final JPanel section = new JPanel(new BorderLayout()); // セクションパネルを作成（中央にラベル配置のため BorderLayout）
-            final JLabel label = new JLabel(String.valueOf(labels[i]), SwingConstants.CENTER); // ラベルを作成（中央寄せ）
-            section.add(label, BorderLayout.CENTER); // ラベルをセクションに追加
+        // //「Spectrum Reset」メニュー項目
+        // JMenuItem resetSpectrum = new JMenuItem("Spectrum Reset");
+        // // クリックされたときRespectrumの値を反転
+        // resetSpectrum.addActionListener(e -> {
+        // FourierController.Respectrum = !FourierController.Respectrum; // 反転させる
+        // System.out.println("Respectrum toggled: " + FourierController.Respectrum); //
+        // 現在の値を表示
+        // callFileIO(); // callFileIOメソッドを呼び出す
+        // });
+        // // ポップアップメニューにこの項目を追加
+        // popupMenu.add(resetSpectrum);
 
-            final Color originalColor = Color.WHITE; // 初期背景色
-            section.setBackground(originalColor); // 背景色を設定
-            section.setPreferredSize(new Dimension(110, 50)); // サイズを設定
+        // メニューを表示するためのウィンドウを用意
+        JFrame frame = new JFrame(); // 枠なしのウィンドウを新しく作成
+        frame.setUndecorated(true); // タイトルバーや閉じるボタンなどを非表示にする
+        frame.setSize(0, 0); // ウィンドウ自体は最小に設定
+        frame.setLocation(mouseLocation); // ウィンドウをマウス位置に移動
+        frame.setVisible(true); // ウィンドウを表示
 
-            section.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    section.setBackground(Color.GRAY); // ホバー時、背景色をグレーに設定
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    section.setBackground(originalColor); // 元の色に戻す
-                }
-
-                // boolean変数を反転させる(true,false)
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    switch (i) {
-                        case 0:
-                            FourierController.Indata = !FourierController.Indata;
-                            System.out.println("Indata toggled: " + FourierController.Indata); // 反転しているかの確認
-                            break;
-                        case 1:
-                            FourierController.Keepdate = !FourierController.Keepdate;
-                            System.out.println("Keepdate toggled: " + FourierController.Keepdate); // 反転しているかの確認
-                            break;
-                        case 2:
-                            FourierController.Respectrum = !FourierController.Respectrum;
-                            System.out.println("Respectrum toggled: " + FourierController.Respectrum); // 反転しているかの確認
-                            break;
-                    }
-                }
-            });
-
-            return section; // セクションを返す
-        }).forEach(panel::add); // パネルに追加
-
-        menuFrame.add(panel);
-        menuFrame.setVisible(true);
+        // メニューを表示
+        SwingUtilities.invokeLater(() -> {
+            // フレーム上の (0,0) の位置にメニューを表示
+            popupMenu.show(frame, 0, 0);
+        });
     }
 
-    public void callFileIO() {
+    /**
+     * ファイル入出力を呼び出すメソッド
+     * このメソッドは、FourierControllerのIndataとKeepdataの値に基づいて、
+     * 入力データの読み込みを行う。
+     * Indataがtrueの場合、input1dDiscreteSignalメソッドを呼び出して入力信号を読み込む。
+     * Keepdataがtrueの場合、output1dDiscreteSignal、outputOperation1dPowerSpectrum、
+     * output1dRestorationDiscreteSignalメソッドを呼び出して信号データを保存する。
+     * このメソッドは、ストリームを使用して条件に合致する場合のみ処理を実行する。
+     */
 
+    public void callFileIO() {
         Stream.of(FourierController.Indata) // Indataがtrueまたはfalse
                 .filter(aBoolean -> aBoolean) // trueのときだけ通す
                 .forEach(aBoolean -> FileIO.input1dDiscreteSignal()); // input1dDiscreteSignalを実行
 
-        Stream.of(FourierController.Keepdate) // Keepdateがtrueまたはfalse
+        Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
                 .filter(aBoolean -> aBoolean) // trueのときだけ通す
                 .forEach(aBoolean -> {
                     FileIO.output1dDiscreteSignal();

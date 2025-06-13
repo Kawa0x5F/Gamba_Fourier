@@ -1,139 +1,131 @@
 package Fourier;
 
+import java.awt.image.BufferedImage;
+import Utility.ImageUtility;
+import java.io.File;
+import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.imageio.ImageIO;
+
 public class FileIO {
 
-    public static double[] dataChirpSignal()
-	{
-		double pi = Math.PI;
-		int sourceSize = 1024;
-		double[] sourceData = new double[sourceSize];
-		for (int i = 0; i < sourceSize; i++)
-		{
-			double value = 12.0d * Math.sin((double)i * (double)i * pi / 2.0d / (double)sourceSize);
-			sourceData[i] = value;
-		}
-		return sourceData;
-	}
 
-	/**
-	 * 離散フーリエ1次元変換のための元データ(のこぎり波:波形の見た目が鋸の歯のような信号)。
-	 */
-	public static double[] dataSawtoothWave()
-	{
-		int sourceSize = 1024;
-		double[] sourceData = new double[sourceSize];
-		for (int i = 0; i < sourceSize; i++)
-		{
-			double value = 12.0d * ((double)(i % 50) / 25.0d - 1.0d);
-			sourceData[i] = value;
-		}
-		return sourceData;
-	}
+public class FileIO {
 
-	/**
-	 * 離散フーリエ1次元変換のための元データ(矩形波:二つのレベルの間を規則的かつ瞬間的に変化する信号)。
-	 */
-	public static double[] dataSquareWave()
-	{
-		double pi = Math.PI;
-		int sourceSize = 1024;
-		double[] sourceData = new double[sourceSize];
-		for (int i = 0; i < sourceSize; i++)
-		{
-			double cos = Math.cos(10.0d * 2.0d * pi * ((double)i / (double)sourceSize));
-			double value = 12.0d * (cos >= 0.0d ? 1.0d : -1.0d);
-			sourceData[i] = value;
-		}
-		return sourceData;
-	}
+    public static void main(String[] args) {
+        // CSV読み込みテスト
+        String csvPath = "step_signal.csv";  // ファイルの入力方法はメニューと相談
+        double[] csvResult = readSignalFromCSV(csvPath);
 
-	/**
-	 * 離散フーリエ1次元変換のための元データ(いくつかの正弦波と余弦波の合成波)。
-	 */
-	public static double[] dataSampleWave()
-	{
-		double pi = Math.PI;
-		int sourceSize = 1024;
-		double[] sourceData = new double[sourceSize];
-		for (int i = 0; i < sourceSize; i++)
-		{
-			double cos1 = 6.0d * Math.cos(12.0d * 2.0d * pi * (double)i / (double)sourceSize);
-			double sin1 = 4.0d * Math.sin( 5.0d * 2.0d * pi * (double)i / (double)sourceSize);
-			double cos2 = 3.0d * Math.cos(24.0d * 2.0d * pi * (double)i / (double)sourceSize);
-			double sin2 = 2.0d * Math.sin(10.0d * 2.0d * pi * (double)i / (double)sourceSize);
-			double value = cos1 + sin1 + cos2 + sin2;
-			sourceData[i] = value;
-		}
-		return sourceData;
-	}
+        if (csvResult.length == 0) {
+            System.out.println("CSVの読み込みに失敗または空データです。");
+        } else {
+            System.out.println("CSV読み込み結果:");
+            for (double v : csvResult) {
+                System.out.println(v);
+            }
+        }
 
-	/**
-	 * 離散フーリエ1次元変換のための元データ(三角波:波形の見た目が三角形のような信号)。
-	 */
-	public static double[] dataTriangleWave()
-	{
-		boolean flag = false;
-		int sourceSize = 1024;
-		double[] sourceData = new double[sourceSize];
-		for (int i = 0; i < sourceSize; i++)
-		{
-			if (i % 50 == 0) { flag = flag ? false : true ; }
-			double value = 12.0d * ((double)(i % 50) / 25.0d - 1.0d);
-			if (flag) { value = 0.0d - value;}
-			sourceData[i] = value;
-		}
-		return sourceData;
-	}
+        // 画像読み込みテスト
+        String imagePath = "JosephFourier1.jpg";  // ファイルの入力方法はメニューと相談
+        double[][][] imageResult = readSignalFromImage(imagePath);
 
+        if (imageResult == null) {
+            System.out.println("画像の読み込みに失敗しました。");
+        } else {
+            System.out.println("画像読み込み結果 (一部):");
+            System.out.printf("高さ: %d, 幅: %d, RGBチャンネル数: %d\n",
+                imageResult.length, imageResult[0].length, imageResult[0][0].length);
+
+            // 例えば左上ピクセルのRGBを表示
+            System.out.printf("左上ピクセル RGB = (%.0f, %.0f, %.0f)\n",
+                imageResult[0][0][0], imageResult[0][0][1], imageResult[0][0][2]);
+        }
+    }
+    
     /**
 	 * 離散フーリエ1次元変換のための元データ(自分で用意した信号(ファイル形式はCSV予定))。
 	 */
+    public static double[] readSignalFromCSV (String filePath) {
+        List<Double> signalList = new ArrayList<>();
 
-	/**
-	 * 離散フーリエ2次元変換のための元データ(4×4の2次元配列)。
-	 */
-	public static double[][] data4x4()
-	{
-		double[][] sourceData = new double[][] { { 900, 901, 902, 903 }, { 910, 911, 912, 913 }, { 920, 921, 922, 923 }, { 930, 931, 932, 933 } };
-		return sourceData;
-	}
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(filePath));
+            String line;
 
-	/**
-	 * 離散フーリエ2次元変換のための元データ(ジョゼフ・フーリエさんのカラー画像)。
-	 */
-	public static double[][][] dataFourierColor()
-	{
-		BufferedImage anImage = ImageUtility.readImage("SampleImages/JosephFourier2.jpg");
-		double[][][] yuvMatrixes = ImageUtility.convertImageToYUVMatrixes(anImage);
-		return yuvMatrixes;
-	}
+            while ((line = br.readLine()) != null) {
+                line = line.trim();  // 前後の空白を除去
+                if (!line.isEmpty()) {
+                    signalList.add(Double.parseDouble(line));
+                }
+            }
+            
+        } catch (IOException | NumberFormatException e) {
+                e.printStackTrace();
+                return new double[0];
+        }
+
+        // Listからdouble[]へ変換
+        double[] result = new double[signalList.size()];
+        for (int i = 0; i < signalList.size(); i++) {
+            result[i] = signalList.get(i);
+        }   
+
+        return result;
+    }
+    
 
     /**
 	 * 離散フーリエ2次元変換のための元データ(自分で用意した画像)。
 	 */
+    public static double[][][] readSignalFromImage (String filePath) {
+        try {
+            BufferedImage image = ImageIO.read(new File(filePath));
+            int width = image.getWidth();
+            int height = image.getHeight();
 
-    /**
-     * 1次元パワースペクトルのデータを保存
-     */
+            double[][][] result = new double[height][width][3];
 
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int rgb = image.getRGB(x, y);
+                    int r = (rgb >> 16) & 0xFF;
+                    int g = (rgb >> 8) & 0xFF;
+                    int b = rgb & 0xFF;
+
+                    result[y][x][0] = (double) r;
+                    result[y][x][1] = (double) g;
+                    result[y][x][2] = (double) b;
+                }
+            }
+            return result;
+            
+        } catch (IOException e) {
+            /*
+             * エラー処理について
+             * 開発中はSystem.err.printlnで、実装時はダイアログ表示等に変更
+             */
+            System.err.println("画像の読み込みに失敗しました: " + e.getMessage()); 
+            return null;
+        }
+    }
+
+    
      /**
-     * 1次元操作後パワースペクトルのデータを保存
+     * 1次元データを保存
      */
-
-    /**
-     * 復元1次元信号のデータを保存
-     */
-
+    public static void writeSignalToCSV (double[] signalData, File csvFile) {
+        return;
+    } 
+    
      /**
-     * 2次元パワースペクトルのデータを保存
+     * 2次元データを保存
      */
-
-     /**
-     * 2次元操作後パワースペクトルのデータを保存
-     */
-
-    /**
-     * 復元2次元信号のデータを保存
-     */
-
+    public static void writeSignalToImage (double[][][] imageData, File imageFile) {
+        return;
+    } 
+    
 }
