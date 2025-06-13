@@ -7,6 +7,38 @@ public class FourierModel1D extends FourierModel {
 
 	private FourierView1D fourierView1D;
 
+    private Complex[] complexOriginData;
+    private double[] calculatedData;
+
+    public double[] getCalculatedData() {
+        return calculatedData; 
+    }
+
+    public void setOriginDataTransDoubltToComplex(double[] originData) {
+        this.complexOriginData = new Complex[originData.length];
+        Integer i = 0;
+        for(double d : originData) {
+            this.complexOriginData[i] = new Complex(d, 0);
+            i += 1;
+        }
+    }
+
+    public void setCalculatedData(double[] originData) {
+        setOriginDataTransDoubltToComplex(originData);
+        double[] oldCalculatedData = this.calculatedData;
+        double[] newCalculatedData = new double[originData.length];
+        Complex[] result = fft(this.complexOriginData);
+        Integer i = 0;
+        for(Complex c : result) {
+            newCalculatedData[i] = c.magnitude();
+            i += 1;
+        }
+        this.calculatedData = newCalculatedData;
+
+        // Viewに変更した通知を送る
+        firePropertyChange("1dData", oldCalculatedData, this.calculatedData);
+    }
+
     public static Complex[] fft(Complex[] x) {
         int N = x.length;
         
