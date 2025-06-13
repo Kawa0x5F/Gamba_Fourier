@@ -4,7 +4,9 @@ import java.awt.image.BufferedImage;
 import Utility.ImageUtility;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -115,7 +117,16 @@ public class FileIO {
      * 1次元データを保存
      */
     public static void writeSignalToCSV (double[] signalData, File csvFile) {
-        return;
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(csvFile))) {
+            for (double value : signalData) {
+                bw.write(Double.toString(value));
+                bw.newLine();  // 改行して1列にする
+            }
+            System.out.println("CSVファイルへの書き出しが完了しました: " + filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("CSVファイルへの書き出しに失敗しました。");
+        }            
     } 
     
      /**
