@@ -76,24 +76,21 @@ public class Menu {
      * ファイル入出力を呼び出すメソッド
      * このメソッドは、FourierControllerのIndataとKeepdataの値に基づいて、
      * 入力データの読み込みを行う。
-     * Indataがtrueの場合、input1dDiscreteSignalメソッドを呼び出して入力信号を読み込む。
-     * Keepdataがtrueの場合、output1dDiscreteSignal、outputOperation1dPowerSpectrum、
-     * output1dRestorationDiscreteSignalメソッドを呼び出して信号データを保存する。
+     * Indataがtrueの場合、readSignalFromCSVメソッドを呼び出して入力信号を読み込む。
+     * Keepdataがtrueの場合、writeSignalToCSVメソッドを呼び出して信号データを保存する。
      * このメソッドは、ストリームを使用して条件に合致する場合のみ処理を実行する。
      */
 
     public void callFileIO() {
         Stream.of(FourierController.Indata) // Indataがtrueまたはfalse
                 .filter(aBoolean -> aBoolean) // trueのときだけ通す
-                .forEach(aBoolean -> FileIO.input1dDiscreteSignal()); // input1dDiscreteSignalを実行
+                .forEach(aBoolean -> FileIO.readSignalFromCSV()); // readSignalFromCSVを実行
 
         Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
                 .filter(aBoolean -> aBoolean) // trueのときだけ通す
                 .forEach(aBoolean -> {
-                    FileIO.output1dDiscreteSignal();
-                    FileIO.outputOperation1dPowerSpectrum();
-                    FileIO.output1dRestorationDiscreteSignal();
-                }); // output1dDiscreteSignal, outputOperation1dPowerSpectrum,
-                    // output1dRestorationDiscreteSignalを実行
+                    FileIO.writeSignalToCSV();
+                }); // writeSignalToCSVを実行
+                    
     }
 }
