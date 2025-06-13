@@ -6,6 +6,7 @@ import java.awt.*; // グラフィックやイベントを扱えるようにす�
 import java.util.stream.Stream; // Streamを使えるようにする
 
 public class Menu {
+    private static JFrame frame; // JFrameを使ってウィンドウを作成
 
     /**
      * メニューを表示するためのメソッドを呼び出す
@@ -59,7 +60,6 @@ public class Menu {
         // popupMenu.add(resetSpectrum);
 
         // メニューを表示するためのウィンドウを用意
-        JFrame frame = new JFrame(); // 枠なしのウィンドウを新しく作成
         frame.setUndecorated(true); // タイトルバーや閉じるボタンなどを非表示にする
         frame.setSize(0, 0); // ウィンドウ自体は最小に設定
         frame.setLocation(mouseLocation); // ウィンドウをマウス位置に移動
@@ -84,13 +84,48 @@ public class Menu {
     public void callFileIO() {
         Stream.of(FourierController.Indata) // Indataがtrueまたはfalse
                 .filter(aBoolean -> aBoolean) // trueのときだけ通す
-                .forEach(aBoolean -> FileIO.readSignalFromCSV()); // readSignalFromCSVを実行
+                .forEach(aBoolean -> FileIO.readSignalFromCSV(getOpenFilePath())); // readSignalFromCSVを実行
 
         Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
                 .filter(aBoolean -> aBoolean) // trueのときだけ通す
                 .forEach(aBoolean -> {
-                    FileIO.writeSignalToCSV();
+                    FileIO.writeSignalToCSV(getSaveFilePath());
                 }); // writeSignalToCSVを実行
-                    
+    }
+
+    /**
+     * ファイル選択ダイアログを表示し、ユーザが選択したファイルのパスを取得するメソッド
+     * このメソッドは、JFileChooserを使用してファイル選択ダイアログを表示し、
+     * ユーザが選択したファイルのパスを返す。
+     * ユーザがファイルを選択しなかった場合はnullを返す。
+     */
+
+    public static String getOpenFilePath() {
+        JFileChooser openfileChooser = new JFileChooser(); // ファイル選択ダイアログを作成
+        int decide = openfileChooser.showOpenDialog(frame); // ダイアログを表示し、ユーザの選択を待つ
+
+        return Stream.of(decide)
+                .filter(d -> d == JFileChooser.APPROVE_OPTION) // ユーザがファイルを選択した場合のみ通す
+                .map(d -> openfileChooser.getSelectedFile().getAbsolutePath()) // 選択されたファイルのパスを取得
+                .findFirst() // 最初の要素を取得
+                .orElse(null); // ファイルが選択されなかった場合はnullを返す
+    }
+
+    /**
+     * ファイル保存ダイアログを表示し、ユーザが保存するファイルのパスを取得するメソッド
+     * このメソッドは、JFileChooserを使用してファイル保存ダイアログを表示し、
+     * ユーザが保存するファイルのパスを返す。
+     * ユーザがファイルを保存しなかった場合はnullを返す。
+     */
+
+    public static String getSaveFilePath() {
+        JFileChooser savefileChooser = new JFileChooser(); // ファイル保存ダイアログを作成
+        int decide = savefileChooser.showSaveDialog(frame); // ダイアログを表示し、ユーザの選択を待つ
+
+        return Stream.of(decide)
+                .filter(d -> d == JFileChooser.APPROVE_OPTION) // ユーザがファイルを選択した場合のみ通す
+                .map(d -> savefileChooser.getSelectedFile().getAbsolutePath()) // 選択されたファイルのパスを取得
+                .findFirst() // 最初の要素を取得
+                .orElse(null); // ファイルが選択されなかった場合はnullを返す
     }
 }
