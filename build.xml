@@ -10,12 +10,22 @@
 	<property name="copyright" value="Copyright 2025 Kawasaki Yuichi All Rights Reserved." />
 	<property name="zipname" value="${ant.project.name}" />
 
+	<property name="test.src.dir" value="test" />
+	<property name="test.dest.dir" value="${destdir}/test-classes" />
+	<property name="lib.dir" value="/home/fft/lib" />
+
+	<path id="junit.classpath">
+		<fileset dir="${lib.dir}" includes="**/*.jar" />
+	</path>
+
+
 	<target name="all" depends="jar" description="build all">
 		<exec executable="date" spawn="false" />
 	</target>
 
-	<target name="prepare" depends="" description="prepare to compile">
+	<target name="prepare" description="prepare to compile">
 		<mkdir dir="${destdir}" />
+		<mkdir dir="${test.dest.dir}" />
 		<exec executable="date" spawn="false" />
 	</target>
 
@@ -33,6 +43,7 @@
 			<classpath>
 				<pathelement location="." />
 			</classpath>
+			<include name="Fourier/**" />
 		</javac>
 		<exec executable="date" spawn="false" />
 	</target>
@@ -42,9 +53,41 @@
 			jarfile="${package}.jar"
 			basedir="${destdir}"
 			manifest="${package}.mf">
+			<exclude name="test-classes/**" />
 		</jar>
 		<exec executable="date" spawn="false" />
 	</target>
+
+	<target name="compile-test" depends="compile" description="compile test sources">
+		<javac
+			srcdir="${test.src.dir}"
+			destdir="${test.dest.dir}"
+			includeAntRuntime="false"
+			encoding="UTF-8">
+			<classpath>
+				<path refid="junit.classpath" />
+				<pathelement location="${destdir}" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="test" depends="compile-test" description="run junit tests">
+		<echo>Running JUnit 5 tests...</echo>
+		<junitlauncher>
+			<classpath>
+				<path refid="junit.classpath" />
+				<pathelement location="${destdir}" />
+				<pathelement location="${test.dest.dir}" />
+			</classpath>
+			<testclasses>
+				<fileset dir="${test.dest.dir}">
+					<include name="**/*Test.class" />
+				</fileset>
+			</testclasses>
+		</junitlauncher>
+		<exec executable="date" spawn="false" />
+	</target>
+
 
 	<target name="clean" description="cleaning">
 		<delete dir="${destdir}" />
@@ -54,16 +97,11 @@
 		<delete file="../${zipname}.zip" />
 		<delete>
 			<fileset dir="Fourier" includes="**/*.class" />
+			<fileset dir="${test.src.dir}" includes="**/*.class" />
 		</delete>
 		<exec executable="date" spawn="false" />
 	</target>
 
-	<target name="test" depends="all" description="test">
-		<exec executable="java" spawn="false">
-			<arg line="-Dfile.encoding=UTF-8 -Xmx512m -Xss1024k -jar ${package}.jar" />
-		</exec>
-		<exec executable="date" spawn="false" />
-	</target>
 
 	<target name="install" depends="all" description="install into application">
 		<copy file="${package}.jar" todir="${instdir}" />
