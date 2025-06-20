@@ -1,10 +1,11 @@
 package Fourier;
 
 import java.awt.image.BufferedImage;
-import Utility.ImageUtility;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,45 +13,13 @@ import javax.imageio.ImageIO;
 
 public class FileIO {
 
-    public static void main(String[] args) {
-        // CSV読み込みテスト
-        String csvPath = "step_signal.csv";  // ファイルの入力方法はメニューと相談
-        double[] csvResult = readSignalFromCSV(csvPath);
-
-        if (csvResult.length == 0) {
-            System.out.println("CSVの読み込みに失敗または空データです。");
-        } else {
-            System.out.println("CSV読み込み結果:");
-            for (double v : csvResult) {
-                System.out.println(v);
-            }
-        }
-
-        // 画像読み込みテスト
-        String imagePath = "JosephFourier1.jpg";  // ファイルの入力方法はメニューと相談
-        double[][][] imageResult = readSignalFromImage(imagePath);
-
-        if (imageResult == null) {
-            System.out.println("画像の読み込みに失敗しました。");
-        } else {
-            System.out.println("画像読み込み結果 (一部):");
-            System.out.printf("高さ: %d, 幅: %d, RGBチャンネル数: %d\n",
-                imageResult.length, imageResult[0].length, imageResult[0][0].length);
-
-            // 例えば左上ピクセルのRGBを表示
-            System.out.printf("左上ピクセル RGB = (%.0f, %.0f, %.0f)\n",
-                imageResult[0][0][0], imageResult[0][0][1], imageResult[0][0][2]);
-        }
-    }
-    
-    /**
+     /**
 	 * 離散フーリエ1次元変換のための元データ(自分で用意した信号(ファイル形式はCSV予定))。
 	 */
     public static double[] readSignalFromCSV (String filePath) {
         List<Double> signalList = new ArrayList<>();
 
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(filePath));
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
 
             while ((line = br.readLine()) != null) {
@@ -84,7 +53,7 @@ public class FileIO {
             int width = image.getWidth();
             int height = image.getHeight();
 
-            double[][][] result = new double[height][width][3];
+            double[][][] result = new double[width][height][3];
 
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
@@ -93,9 +62,9 @@ public class FileIO {
                     int g = (rgb >> 8) & 0xFF;
                     int b = rgb & 0xFF;
 
-                    result[y][x][0] = (double) r;
-                    result[y][x][1] = (double) g;
-                    result[y][x][2] = (double) b;
+                    result[x][y][0] = (double) r;
+                    result[x][y][1] = (double) g;
+                    result[x][y][2] = (double) b;
                 }
             }
             return result;
@@ -110,19 +79,46 @@ public class FileIO {
         }
     }
 
-    
      /**
      * 1次元データを保存
      */
-    public static void writeSignalToCSV (double[] signalData, File csvFile) {
-        return;
+    public static void writeSignalToCSV (double[] signalData, File csvFile) { //ファイルの保存先の指定はメニューが行う予定
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(csvFile))) {
+            for (double value : signalData) {
+                bw.write(Double.toString(value));
+                bw.newLine();  // 改行して1列にする
+            }
+            System.out.println("CSVファイルへの書き出しが完了しました: " + csvFile.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("CSVファイルへの書き出しに失敗しました。");
+        }            
     } 
     
      /**
      * 2次元データを保存
      */
     public static void writeSignalToImage (double[][][] imageData, File imageFile) {
-        return;
+        int width = imageData.length;
+        int height = imageData[0].length;
+        BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int r = (int) Math.min(255, Math.max(0, imageData[x][y][0]));
+                int g = (int) Math.min(255, Math.max(0, imageData[x][y][1]));
+                int b = (int) Math.min(255, Math.max(0, imageData[x][y][2]));
+                int rgb = (r << 16) | (g << 8) | b;
+                bi.setRGB(x, y, rgb);
+            }
+        }
+
+        try {
+            ImageIO.write(bi, "jpg", imageFile);
+            System.out.println("画像ファイルへの書き出しが完了しました: " + imageFile.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("画像ファイルへの書き出しに失敗しました。");
+        }
     } 
     
 }
