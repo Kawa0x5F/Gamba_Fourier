@@ -116,13 +116,13 @@ public class FileIO {
      /**
      * 1次元データを保存
      */
-    public static void writeSignalToCSV (double[] signalData, File csvFile) {
+    public static void writeSignalToCSV (double[] signalData, File csvFile) { //ファイルの保存先の指定はメニューが行う予定
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(csvFile))) {
             for (double value : signalData) {
                 bw.write(Double.toString(value));
                 bw.newLine();  // 改行して1列にする
             }
-            System.out.println("CSVファイルへの書き出しが完了しました: " + filePath);
+            System.out.println("CSVファイルへの書き出しが完了しました: " + csvFile.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("CSVファイルへの書き出しに失敗しました。");
