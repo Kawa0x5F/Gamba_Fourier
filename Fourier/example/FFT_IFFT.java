@@ -36,8 +36,6 @@ public class FFT_IFFT {
         if (n == 1) return;
 
         int half = n / 2;
-        
-        
 
         for (int k = 0; k < half; k++) {
             int i = start + k;
@@ -74,9 +72,6 @@ public class FFT_IFFT {
         for (int i = 0; i < N; i++) {
             data[i] = new Complex(input[i], 0);
         }
-
-        
-        
        
 
         // FFT（インプレース）
@@ -103,9 +98,4 @@ public class FFT_IFFT {
             System.out.println(c);
         }
     }
-
-    public static void main(String[] args) {
-        FFTandIFFT_test();
-    }
-
 }

@@ -14,6 +14,11 @@ public class FourierModel1D extends FourierModel {
         return calculatedData; 
     }
 
+    //static double[] input = GenerateBinaryData.CreateBinaryData(); 
+        double[] input = {1, 0, 0, 1, 0, 0, 0, 1};
+        Complex[] data = complexOriginData;
+        int N = input.length;
+
     public void setOriginDataTransDoubltToComplex(double[] originData) {
         this.complexOriginData = new Complex[originData.length];
         Integer i = 0;
@@ -27,9 +32,9 @@ public class FourierModel1D extends FourierModel {
         setOriginDataTransDoubltToComplex(originData);
         double[] oldCalculatedData = this.calculatedData;
         double[] newCalculatedData = new double[originData.length];
-        Complex[] result = fft(this.complexOriginData);
+        fft(0, N);
         Integer i = 0;
-        for(Complex c : result) {
+        for(Complex c : data) {
             newCalculatedData[i] = c.magnitude();
             i += 1;
         }
@@ -39,51 +44,94 @@ public class FourierModel1D extends FourierModel {
         firePropertyChange("1dData", oldCalculatedData, this.calculatedData);
     }
 
-    public static Complex[] fft(Complex[] x) {
-        int N = x.length;
+   
         
-        if (N == 1) return new Complex[]{x[0]};
 
-        Complex[] even = new Complex[N / 2];
-        Complex[] odd = new Complex[N / 2];
-        for (int i = 0; i < (N / 2); i++) {
-            even[i] = x[2 * i];
-            odd[i] = x[2 * i + 1];
+        // ビット反転インデックス
+        static int bitReverse(int x, int bits) {
+            int y = 0;
+            for (int i = 0; i < bits; i++) {
+                y = (y << 1) | (x & 1);
+                x >>= 1;
+            }
+            return y;
         }
 
-        Complex[] Feven = fft(even);         // 現在のNに対する、各偶数行でのFFTの出力値を格納する配列Feven
-        Complex[] Fodd = fft(odd);           // 現在のNに対する、各奇数行でのFFTの出力値を格納する配列Feven
-        
-        // バタフライ演算の実装
-        Complex[] result = new Complex[N];
-        for (int k = 0; k < N / 2; k++) {
-            double angle = -2 * Math.PI * k / N;                         // 単位円上のk番目の点(0<= k < N/2、kは整数)と原点を結んだ時の角度
-            Complex wk = new Complex(Math.cos(angle), Math.sin(angle));  // angleに対する回転因子を算出
-
-            // N点ごと(各行ごと)に求めたFFTを合成する
-            Complex t = wk.mul(Fodd[k]);  // 奇数成分のDFT(FFT)に回転因子wkをかけることで、現在のN点分割したときの奇数行目を求める
-            result[k] = Feven[k].add(t);  // 現在のN点分割したときの偶数行目(偶数成分のDFT)にtを足す
-            result[k + N / 2] = Feven[k].sub(t); // 偶数行目(偶数成分のDFT)からtを引く
-            // kとk+N/2の要素の結果を算出する理由は、入力信号時点でのN(今回の場合、N=8)をN=1となるまで分割した際、
-            // 元々のN(入力時点でのN)点での入力の順番をビットリバースした時の順に合わせるため(バタフライ演算した時の出力のペア)
-        }
-        return result;
-    }
-
-    public static Complex[] ifft(Complex[] x) {
-        int N = x.length;
-
-        Complex[] x_conjugate = new Complex[N];
-        for(int i = 0; i < N; i++){
-            x_conjugate[i] = x[i].conjugate();
+        // ビット反転で並び替え（FFTの前処理）
+        public  void bitReverseReorder() {
+            int bits = Integer.numberOfTrailingZeros(N);
+            for (int i = 0; i < N; i++) {
+                int j = bitReverse(i, bits);
+                if (i < j) {
+                    Complex temp = data[i];
+                    data[i] = data[j];
+                    data[j] = temp;
+                }
+            }
         }
 
-        Complex[] y = fft(x_conjugate);
-        
-        Complex[] result = new Complex[N];
-        for(int i = 0; i < N; i++){
-            result[i] = y[i].conjugate().scale(1.0 / N);
+        // FFT
+        public  void fft(int start, int n) {
+            if (n == 1) return;
+            int half = n / 2;
+            
+
+            for (int k = 0; k < half; k++) {
+                int i = start + k;
+                int j = i + half;
+
+                double angle = -2 * Math.PI * k / n;
+                Complex w = new Complex(Math.cos(angle), Math.sin(angle));
+                Complex t = data[j];
+                Complex u = data[i];
+                data[i] = u.add(t);
+                data[j] = w.mul(u.sub(t));
+            }
+
+            fft(start, half);
+            fft(start + half, half);
+            
         }
-        return result;
-    }
+
+        // IFFT
+        public  void ifft() {
+            for (int i = 0; i < N; i++) {
+                data[i] = data[i].conjugate();
+            }
+
+            fft(0, N);
+
+            for (int i = 0; i < N; i++) {
+                data[i] = data[i].conjugate().scale(1.0 / N);
+            }
+        }
+
+    //     public static void FFTandIFFT_test() {
+    //         // 入力初期化
+    //         for (int i = 0; i < N; i++) {
+    //             data[i] = new Complex(input[i], 0);
+    //         }
+
+    //         // FFT（インプレース）
+    //         fft(0, N);
+
+    //         // ビット反転順に並び替え
+    //         bitReverseReorder();
+
+    //         System.out.println("=== FFT Result ===");
+    //         for (Complex c : data) {
+    //             System.out.println(c);
+    //         }
+
+    //         // IFFT
+    //         ifft();
+
+    //         // ビット反転順に並び替え
+    //         bitReverseReorder();
+
+    //         System.out.println("\n=== IFFT Result ===");
+    //         for (Complex c : data) {
+    //             System.out.println(c);
+    //         }
+    //     }
 }
