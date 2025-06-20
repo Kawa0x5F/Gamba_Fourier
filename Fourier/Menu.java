@@ -76,21 +76,33 @@ public class Menu {
      * ファイル入出力を呼び出すメソッド
      * このメソッドは、FourierControllerのIndataとKeepdataの値に基づいて、
      * 入力データの読み込みを行う。
-     * Indataがtrueの場合、readSignalFromCSVメソッドを呼び出して入力信号を読み込む。
-     * Keepdataがtrueの場合、writeSignalToCSVメソッドを呼び出して信号データを保存する。
+     * Indataがtrueかつ入力されたデータが1次元の場合、readSignalFromCSVメソッドを呼び出して1次元の入力信号を読み込む。
+     * Indataがtrueかつ入力されたデータが2次元の場合、readSignalFromImageメソッドを呼び出して2次元の入力信号を読み込む。
+     * Keepdataがtrueかつ保存するデータが1次元の場合、writeSignalToCSVメソッドを呼び出して1次元の信号データを保存する。
+     * Keepdataがtrueかつ保存するデータが2次元の場合、writeSignalToImageメソッドを呼び出して2次元の信号データを保存する。
      * このメソッドは、ストリームを使用して条件に合致する場合のみ処理を実行する。
      */
 
     public void callFileIO() {
         Stream.of(FourierController.Indata) // Indataがtrueまたはfalse
-                .filter(aBoolean -> aBoolean) // trueのときだけ通す
+                .filter(aBoolean -> aBoolean && Dimensional == 0) // trueかつデータが1次元のときだけ通す
                 .forEach(aBoolean -> FileIO.readSignalFromCSV(getOpenFilePath())); // readSignalFromCSVを実行
 
+        Stream.of(FourierController.Indata) // Indataがtrueまたはfalse
+                .filter(aBoolean -> aBoolean && Dimensional == 1) // trueかつデータが2次元のときだけ通す
+                .forEach(aBoolean -> FileIO.readSignalFromImage(getOpenFilePath())); // readSignalFromImageを実行
+
         Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
-                .filter(aBoolean -> aBoolean) // trueのときだけ通す
+                .filter(aBoolean -> aBoolean && Dimensional == 0) // trueかつデータが1次元のときだけ通す
                 .forEach(aBoolean -> {
                     FileIO.writeSignalToCSV(getSaveFilePath());
                 }); // writeSignalToCSVを実行
+
+        Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
+                .filter(aBoolean -> aBoolean && Dimensional == 1) // trueかつデータが2次元のときだけ通す
+                .forEach(aBoolean -> {
+                    FileIO.writeSignalToImage(getSaveFilePath());
+                }); // writeSignalToImageを実行
     }
 
     /**
