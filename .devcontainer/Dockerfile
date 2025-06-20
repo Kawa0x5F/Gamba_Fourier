@@ -8,15 +8,13 @@ ARG USER_GID=2000
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install necessary packages including bash-completion
+# --- 改善点 1: パッケージインストールを1つにまとめる ---
+# apt-get updateの重複をなくし、gitのインストールを削除（devcontainer.jsonのfeatureで管理するため）
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     gnupg \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get update && apt-get install -y \
     ant \
     make \
-    git \
     bash-completion \
     x11-apps \
     libxext6 \
@@ -58,5 +56,17 @@ ENV PATH=$JAVA_HOME/bin:$PATH
 # Set DISPLAY environment variable
 ENV DISPLAY=:0
 
-# Keep running as the specified user
+# Create a directory for libraries
+RUN mkdir -p lib
+
+# Download JUnit 5 Platform Console Standalone JAR
+# See: https://mvnrepository.com/artifact/org.junit.platform/junit-platform-console-standalone
+ARG JUNIT_VERSION=1.10.2
+RUN wget -O lib/junit-platform-console-standalone.jar \
+    https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/${JUNIT_VERSION}/junit-platform-console-standalone-${JUNIT_VERSION}.jar
+
+RUN wget https://repo1.maven.org/maven2/org/apache/ant/ant-junitlauncher/1.10.14/ant-junitlauncher-1.10.14.jar \
+    && sudo mv ant-junitlauncher-1.10.14.jar /usr/share/ant/lib/
+
+    # Keep running as the specified user
 USER $USERNAME

@@ -6,8 +6,7 @@
             "USER_UID": "2000",
             "USER_GID": "2000",
             "USERNAME": "fft"
-        },
-        "platform": "linux/amd64"
+        }
     },
     "features": {
         "ghcr.io/devcontainers/features/git:1": {}
@@ -19,10 +18,18 @@
                 "redhat.java",
                 "vscjava.vscode-java-debug",
                 "vscjava.vscode-java-test",
-                "visualstudioexptteam.vscodeintellicode"
+                "visualstudioexptteam.vscodeintellicode",
+                "vscjava.vscode-ant",
+                "ms-vscode.makefile-tools"
             ]
         }
     },
+
+    // ===== 追加: コンテナ作成後に実行されるコマンド =====
+    // .vscode/settings.json を自動生成し、Javaのライブラリパスを設定します。
+    // これにより "import org.junit" のようなエラーが自動で解決されます。
+    "postCreateCommand": "mkdir -p .vscode && echo '{\n  \"java.project.referencedLibraries\": [\n    \"/home/fft/lib/**/*.jar\"\n  ]\n}' > .vscode/settings.json",
+
     "remoteUser": "fft",
     "mounts": [
         "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind",
@@ -31,7 +38,6 @@
     "runArgs": [
         "--env=DISPLAY=host.docker.internal:0",
         "--env=XAUTHORITY=/home/fft/.Xauthority",
-        "--env=LIBGL_ALWAYS_INDIRECT=1",
-        "--platform=linux/amd64"
+        "--env=LIBGL_ALWAYS_INDIRECT=1"
     ]
-} 
+}

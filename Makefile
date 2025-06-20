@@ -1,8 +1,11 @@
-ANT	= env LC_ALL=ja_JP.UTF-8 ant
-ARCHIVE	= $(shell basename `pwd`)
-SOURCES	= $(shell find . -name "*.java")
-STYLE_YAML	= clang-format-for-java.yaml
-STYLE_CONF	= _clang-format
+ANT = env LC_ALL=ja_JP.UTF-8 ant
+ARCHIVE = $(shell basename `pwd`)
+SOURCES = $(shell find . -name "*.java")
+STYLE_YAML  = clang-format-for-java.yaml
+STYLE_CONF  = _clang-format
+
+# .PHONY ディレクティブを追加し、アクションを表すターゲットをすべて指定します。
+.PHONY: all clean test install doc wipe zip format app check if ifTrue ifFalse ifThenElse while whileTrue whileFalse for forEach
 
 all:
 	$(ANT) all
@@ -77,3 +80,4 @@ for:
 forEach:
 	@echo "---<" $@ ">---" 
 	@find . -name '*.java' -exec grep -HnE 'forEach[\ \t]*\(' {} \; | sort
+
