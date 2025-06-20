@@ -11,9 +11,9 @@ public class Menu {
     /**
      * メニューを表示するためのメソッドを呼び出す
      * このメソッドは、マウスカーソルの位置にポップアップメニューを表示し、
-     * 「data Entry」や「data Storage」などのメニュー項目を提供する。
+     * 「1dData Entry」、「2dData Entry」や「data Storage」などのメニュー項目を提供する。
      * 各メニュー項目は、クリックされたときに特定のアクションを実行する。
-     * 例えば、「data Entry」をクリックすると、FourierController.Indataの値が反転し、
+     * 例えば、「data Entry」をクリックすると、FourierController.In1dDataの値が反転し、
      * 現在の値がコンソールに表示される。また、callFileIOメソッドが呼び出され、
      * データの読み込みが行われる。
      */
@@ -25,18 +25,29 @@ public class Menu {
         // メニューを作成
         JPopupMenu popupMenu = new JPopupMenu();
 
-        // 「Date Entry」メニュー項目
-        JMenuItem entryData = new JMenuItem("data Entry");
-        // クリックされたときIndataの値を反転
-        entryData.addActionListener(e -> {
-            FourierController.Indata = !FourierController.Indata; // 反転させる
-            System.out.println("Indata toggled: " + FourierController.Indata); // 現在の値を表示
+        // 「1dData Entry」メニュー項目
+        JMenuItem entry1dData = new JMenuItem("1dData Entry");
+        // クリックされたときIn1dDataの値を反転
+        entry1dData.addActionListener(e -> {
+            FourierController.In1dData = !FourierController.In1dData; // 反転させる
+            System.out.println("In1dData toggled: " + FourierController.In1dData); // 現在の値を表示
             callFileIO(); // callFileIOメソッドを呼び出す
         });
         // ポップアップメニューにこの項目を追加
-        popupMenu.add(entryData);
+        popupMenu.add(entry1dData);
 
-        // 「Date Storage」メニュー項目
+        // 「2dData Entry」メニュー項目
+        JMenuItem entry2dData = new JMenuItem("2dData Entry");
+        // クリックされたときIn2dDataの値を反転
+        entry1dData.addActionListener(e -> {
+            FourierController.In2dData = !FourierController.In2dData; // 反転させる
+            System.out.println("In2dData toggled: " + FourierController.In2dData); // 現在の値を表示
+            callFileIO(); // callFileIOメソッドを呼び出す
+        });
+        // ポップアップメニューにこの項目を追加
+        popupMenu.add(entry2dData);
+
+        // 「Data Storage」メニュー項目
         JMenuItem storageData = new JMenuItem("data Storage");
         // クリックされたときKeepdataの値を反転
         storageData.addActionListener(e -> {
@@ -74,32 +85,32 @@ public class Menu {
 
     /**
      * ファイル入出力を呼び出すメソッド
-     * このメソッドは、FourierControllerのIndataとKeepdataの値に基づいて、
+     * このメソッドは、FourierControllerのIn1dDataとKeepdataの値に基づいて、
      * 入力データの読み込みを行う。
-     * Indataがtrueかつ入力されたデータが1次元の場合、readSignalFromCSVメソッドを呼び出して1次元の入力信号を読み込む。
-     * Indataがtrueかつ入力されたデータが2次元の場合、readSignalFromImageメソッドを呼び出して2次元の入力信号を読み込む。
+     * In1dDataがtrueかつ入力されたデータが1次元の場合、readSignalFromCSVメソッドを呼び出して1次元の入力信号を読み込む。
+     * In1dDataがtrueかつ入力されたデータが2次元の場合、readSignalFromImageメソッドを呼び出して2次元の入力信号を読み込む。
      * Keepdataがtrueかつ保存するデータが1次元の場合、writeSignalToCSVメソッドを呼び出して1次元の信号データを保存する。
      * Keepdataがtrueかつ保存するデータが2次元の場合、writeSignalToImageメソッドを呼び出して2次元の信号データを保存する。
      * このメソッドは、ストリームを使用して条件に合致する場合のみ処理を実行する。
      */
 
     public void callFileIO() {
-        Stream.of(FourierController.Indata) // Indataがtrueまたはfalse
-                .filter(aBoolean -> aBoolean && Dimensional == 0) // trueかつデータが1次元のときだけ通す
+        Stream.of(FourierController.In1dData) // In1dDataがtrueまたはfalse
+                .filter(aBoolean -> aBoolean) // trueのときだけ通す
                 .forEach(aBoolean -> FileIO.readSignalFromCSV(getOpenFilePath())); // readSignalFromCSVを実行
 
-        Stream.of(FourierController.Indata) // Indataがtrueまたはfalse
-                .filter(aBoolean -> aBoolean && Dimensional == 1) // trueかつデータが2次元のときだけ通す
+        Stream.of(FourierController.In2dData) // In2dDataがtrueまたはfalse
+                .filter(aBoolean -> aBoolean) // trueのときだけ通す
                 .forEach(aBoolean -> FileIO.readSignalFromImage(getOpenFilePath())); // readSignalFromImageを実行
 
         Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
-                .filter(aBoolean -> aBoolean && Dimensional == 0) // trueかつデータが1次元のときだけ通す
+                .filter(aBoolean -> aBoolean && FourierController.Dimensional == 0) // trueかつデータが1次元のときだけ通す
                 .forEach(aBoolean -> {
                     FileIO.writeSignalToCSV(getSaveFilePath());
                 }); // writeSignalToCSVを実行
 
         Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
-                .filter(aBoolean -> aBoolean && Dimensional == 1) // trueかつデータが2次元のときだけ通す
+                .filter(aBoolean -> aBoolean && FourierController.Dimensional == 1) // trueかつデータが2次元のときだけ通す
                 .forEach(aBoolean -> {
                     FileIO.writeSignalToImage(getSaveFilePath());
                 }); // writeSignalToImageを実行
