@@ -112,13 +112,36 @@ public class FileIO {
             }
         }
 
+        String formatName = getImageFormat(imageFile);
+        if (formatName == null) {
+            System.out.println("未対応の拡張子です: " + imageFile.getName() + "。保存をスキップしました。");
+            return;
+        }
+
+
         try {
-            ImageIO.write(bi, "jpg", imageFile);
+            ImageIO.write(bi, formatName, imageFile);
             System.out.println("画像ファイルへの書き出しが完了しました: " + imageFile.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("画像ファイルへの書き出しに失敗しました。");
         }
     } 
+
+    /**
+     * 画像ファイルの拡張子を取得
+     * 対応していない拡張子の場合はnullを返す
+     * 対応拡張子: jpg(jpeg), png, bmp, gif
+     */
+    private static String getImageFormat(File imageFile) {
+        String name = imageFile.getName().toLowerCase();
+        if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "jpg";
+        else if (name.endsWith(".png")) return "png";
+        else if (name.endsWith(".bmp")) return "bmp";
+        else if (name.endsWith(".gif")) return "gif";
+        else return null;
+    }
     
-}
+}    
+    
+
