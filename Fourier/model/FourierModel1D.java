@@ -21,7 +21,6 @@ public class FourierModel1D extends FourierModel  {
     public void setComplexOriginData(Complex[] origin) {
         this.complexOriginData = origin.clone();  // cloneでコピーを作ってから返す
     }
-        
 
     public void setOriginDataTransDoubltToComplex(double[] originData) {
         this.complexOriginData = new Complex[originData.length];
@@ -52,9 +51,6 @@ public class FourierModel1D extends FourierModel  {
         // Viewに変更した通知を送る
         firePropertyChange("1dData", oldCalculatedData, this.calculatedData);
     }
-
-   
-        
 
     // ビット反転インデックス
     public int bitReverse(int x, int bits) {
