@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 
+import Fourier.model.FourierModel1D;
+
 public class FileIO {
 
      /**
@@ -82,7 +84,8 @@ public class FileIO {
      /**
      * 1次元データを保存
      */
-    public static void writeSignalToCSV (double[] signalData, File csvFile) { //ファイルの保存先の指定はメニューが行う予定
+    public static void writeSignalToCSV (double[] signalData, String filePath) { //ファイルの保存先の指定はメニューが行う予定
+        File csvFile = new File(filePath);
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(csvFile))) {
             for (double value : signalData) {
                 bw.write(Double.toString(value));
@@ -98,7 +101,8 @@ public class FileIO {
      /**
      * 2次元データを保存
      */
-    public static void writeSignalToImage (double[][][] imageData, File imageFile) {
+    public static void writeSignalToImage (double[][][] imageData, String filePath) {
+        File imageFile = new File(filePath);
         int width = imageData.length;
         int height = imageData[0].length;
         BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
