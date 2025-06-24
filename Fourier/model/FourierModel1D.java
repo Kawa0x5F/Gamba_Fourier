@@ -3,7 +3,7 @@ package Fourier.model;
 import Fourier.Complex;
 import Fourier.view.FourierView1D;
 
-public class FourierModel1D extends FourierModel {
+public class FourierModel1D extends FourierModel  {
 
 	private FourierView1D fourierView1D;
 
@@ -14,10 +14,14 @@ public class FourierModel1D extends FourierModel {
         return calculatedData; 
     }
 
-    //static double[] input = GenerateBinaryData.CreateBinaryData(); 
-        double[] input = {1, 0, 0, 1, 0, 0, 0, 1};
-        Complex[] data = complexOriginData;
-        int N = input.length;
+    public Complex[] getComplexResult() {
+    return this.complexOriginData;
+    }
+
+    public void setComplexOriginData(Complex[] origin) {
+        this.complexOriginData = origin.clone();  // cloneでコピーを作ってから返す
+    }
+        
 
     public void setOriginDataTransDoubltToComplex(double[] originData) {
         this.complexOriginData = new Complex[originData.length];
@@ -32,10 +36,15 @@ public class FourierModel1D extends FourierModel {
         setOriginDataTransDoubltToComplex(originData);
         double[] oldCalculatedData = this.calculatedData;
         double[] newCalculatedData = new double[originData.length];
+        Integer N = this.complexOriginData.length;
+
+        
         fft(0, N);
+        bitReverseReorder();
+
         Integer i = 0;
-        for(Complex c : data) {
-            newCalculatedData[i] = c.magnitude();
+        for(Complex c : this.complexOriginData) {
+            newCalculatedData[i] = c.magnitude() * c.magnitude();  // パワースペクトルを計算
             i += 1;
         }
         this.calculatedData = newCalculatedData;
@@ -47,91 +56,65 @@ public class FourierModel1D extends FourierModel {
    
         
 
-        // ビット反転インデックス
-        static int bitReverse(int x, int bits) {
-            int y = 0;
-            for (int i = 0; i < bits; i++) {
-                y = (y << 1) | (x & 1);
-                x >>= 1;
-            }
-            return y;
+    // ビット反転インデックス
+    public int bitReverse(int x, int bits) {
+        int y = 0;
+        for (int i = 0; i < bits; i++) {
+            y = (y << 1) | (x & 1);
+            x >>= 1;
         }
+        return y;
+    }
 
-        // ビット反転で並び替え（FFTの前処理）
-        public  void bitReverseReorder() {
-            int bits = Integer.numberOfTrailingZeros(N);
-            for (int i = 0; i < N; i++) {
-                int j = bitReverse(i, bits);
-                if (i < j) {
-                    Complex temp = data[i];
-                    data[i] = data[j];
-                    data[j] = temp;
-                }
+    // ビット反転で並び替え
+    public void bitReverseReorder() {
+        Integer N = this.complexOriginData.length;
+            
+        int bits = Integer.numberOfTrailingZeros(N);
+        for (int i = 0; i < N; i++) {
+            int j = bitReverse(i, bits);
+            if (i < j) {
+                Complex temp = this.complexOriginData[i];
+                this.complexOriginData[i] = this.complexOriginData[j];
+                this.complexOriginData[j] = temp;
             }
         }
+    }
 
-        // FFT
-        public  void fft(int start, int n) {
-            if (n == 1) return;
-            int half = n / 2;
+    // FFT
+    public  void fft(int start, int n) {
+        if (n == 1) return;
+        int half = n / 2;
             
 
-            for (int k = 0; k < half; k++) {
-                int i = start + k;
-                int j = i + half;
+        for (int k = 0; k < half; k++) {
+            int i = start + k;
+            int j = i + half;
 
-                double angle = -2 * Math.PI * k / n;
-                Complex w = new Complex(Math.cos(angle), Math.sin(angle));
-                Complex t = data[j];
-                Complex u = data[i];
-                data[i] = u.add(t);
-                data[j] = w.mul(u.sub(t));
-            }
+            double angle = -2 * Math.PI * k / n;
+            Complex w = new Complex(Math.cos(angle), Math.sin(angle));
+            Complex t = this.complexOriginData[j];
+            Complex u = this.complexOriginData[i];
+            this.complexOriginData[i] = u.add(t);
+            this.complexOriginData[j] = w.mul(u.sub(t));
+        }
 
-            fft(start, half);
-            fft(start + half, half);
+        fft(start, half);
+        fft(start + half, half);
             
+    }
+
+    // IFFT
+    public  void ifft() {
+        for (int i = 0; i < this.complexOriginData.length; i++) {
+            this.complexOriginData[i] = this.complexOriginData[i].conjugate();
         }
 
-        // IFFT
-        public  void ifft() {
-            for (int i = 0; i < N; i++) {
-                data[i] = data[i].conjugate();
-            }
+        fft(0, this.complexOriginData.length);
+        bitReverseReorder();
 
-            fft(0, N);
-
-            for (int i = 0; i < N; i++) {
-                data[i] = data[i].conjugate().scale(1.0 / N);
-            }
+        for (int i = 0; i < this.complexOriginData.length; i++) {
+            this.complexOriginData[i] = this.complexOriginData[i].conjugate().scale(1.0 / this.complexOriginData.length);
         }
-
-    //     public static void FFTandIFFT_test() {
-    //         // 入力初期化
-    //         for (int i = 0; i < N; i++) {
-    //             data[i] = new Complex(input[i], 0);
-    //         }
-
-    //         // FFT（インプレース）
-    //         fft(0, N);
-
-    //         // ビット反転順に並び替え
-    //         bitReverseReorder();
-
-    //         System.out.println("=== FFT Result ===");
-    //         for (Complex c : data) {
-    //             System.out.println(c);
-    //         }
-
-    //         // IFFT
-    //         ifft();
-
-    //         // ビット反転順に並び替え
-    //         bitReverseReorder();
-
-    //         System.out.println("\n=== IFFT Result ===");
-    //         for (Complex c : data) {
-    //             System.out.println(c);
-    //         }
-    //     }
+    }
 }

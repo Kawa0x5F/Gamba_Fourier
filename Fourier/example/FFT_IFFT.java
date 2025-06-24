@@ -6,7 +6,7 @@ public class FFT_IFFT {
     //static double[] input = GenerateBinaryData.CreateBinaryData();
     static double[] input = {1, 0, 0, 1, 0, 0, 0, 1};
     static Complex[] data = new Complex[input.length];
-    static int N = input.length;
+    static Integer N = data.length;
 
     // ビット反転インデックス
     static int bitReverse(int x, int bits) {
@@ -19,7 +19,7 @@ public class FFT_IFFT {
     }
 
     // ビット反転で並び替え（FFTの前処理）
-    public static void bitReverseReorder() {
+    static void bitReverseReorder() {
         int bits = Integer.numberOfTrailingZeros(N);
         for (int i = 0; i < N; i++) {
             int j = bitReverse(i, bits);
@@ -97,5 +97,9 @@ public class FFT_IFFT {
         for (Complex c : data) {
             System.out.println(c);
         }
+    }
+
+     public static void main(String[] args) {
+        FFTandIFFT_test();
     }
 }
