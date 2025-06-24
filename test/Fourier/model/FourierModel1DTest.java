@@ -1,117 +1,160 @@
 package Fourier.model;
 
-import Fourier.Complex;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import Fourier.Complex;
 
+/**
+ * FourierModel1DクラスのFFTおよびIFFTの機能をテストするクラスです。
+ * * @see FourierModel1D
+ */
 class FourierModel1DTest {
 
-    // 浮動小数点数の計算誤差を許容するための「デルタ（許容誤差）」
+    private FourierModel1D fourierModel;
+    // 浮動小数点数の比較に使用する許容誤差
     private static final double DELTA = 1e-9;
 
     /**
-     * fftメソッドの基本的な動作を検証するテスト。
-     * 既知の入力に対して、期待される出力が得られるかを確認します。
-     * 入力: [1, 0, 0, 0] -> 出力: [1, 1, 1, 1]
+     * 各テストの実行前に、新しいFourierModel1Dインスタンスを初期化します。
      */
-    @Test
-    @DisplayName("fft: [1,0,0,0] のような単純な入力で正しく変換されるか")
-    void testFft_SimpleInput() {
-        // 1. 準備 (Arrange)
-        Complex[] input = {
-            new Complex(1.0, 0.0),
-            new Complex(0.0, 0.0),
-            new Complex(0.0, 0.0),
-            new Complex(0.0, 0.0)
-        };
-
-        Complex[] expected = {
-            new Complex(1.0, 0.0),
-            new Complex(1.0, 0.0),
-            new Complex(1.0, 0.0),
-            new Complex(1.0, 0.0)
-        };
-
-        // 2. 実行 (Act)
-        Complex[] actual = FourierModel1D.fft(input);
-
-        // 3. 検証 (Assert)
-        assertNotNull(actual, "fftの結果がnullであってはならない");
-        assertEquals(expected.length, actual.length, "結果の配列長が期待値と異なる");
-        assertComplexArrayEquals(expected, actual, "FFTの計算結果が期待値と異なる");
+    @BeforeEach
+    void setUp() {
+        fourierModel = new FourierModel1D();
     }
 
     /**
-     * fftとifftが互いに逆の変換であることを検証する「ラウンドトリップ」テスト。
-     * あるデータにfftを適用し、その結果にifftを適用すると、元のデータに復元されるはずです。
+     * FFT（高速フーリエ変換）の正確性をテストします。
+     * <p>
+     * N=4の既知の入力データに対してFFTを実行し、理論値と比較します。
+     * 入力: [1, 2, 3, 4]
+     * 理論的なFFT結果: [10, -2+2i, -2, -2-2i]
+     * </p>
+     * <p>
+     * 注: このクラスのfftメソッドは、計算後にビット反転並べ替えが必要です。
+     * そのため、fft()の後にbitReverseReorder()を呼び出して結果を検証します。
+     * </p>
      */
     @Test
-    @DisplayName("ifft(fft(x)) が元の値 x に復元されるか (ラウンドトリップテスト)")
-    void testIfft_RoundTrip() {
-        // 1. 準備 (Arrange)
-        Complex[] originalData = {
-            new Complex(0.5, 0.0),
-            new Complex(1.2, 0.0),
-            new Complex(3.4, 0.0),
-            new Complex(0.9, 0.0)
+    @DisplayName("FFTが正しく計算されるかテスト")
+    void testFFT() {
+        // 1. セットアップ: テストデータ準備
+        Complex[] inputData = {
+            new Complex(1, 0),
+            new Complex(2, 0),
+            new Complex(3, 0),
+            new Complex(4, 0)
+        };
+        fourierModel.setComplexOriginData(inputData);
+
+        // 期待される結果 (理論値)
+        Complex[] expectedOutput = {
+            new Complex(10, 0),
+            new Complex(-2, 2),
+            new Complex(-2, 0),
+            new Complex(-2, -2)
         };
 
-        // 2. 実行 (Act)
-        Complex[] transformedData = FourierModel1D.fft(originalData);
-        Complex[] restoredData = FourierModel1D.ifft(transformedData);
+        // 2. 実行: FFTを計算
+        // この実装では、fft()の後にビット反転並べ替えが必要
+        fourierModel.fft(0, inputData.length);
+        fourierModel.bitReverseReorder();
+        Complex[] actualOutput = fourierModel.getComplexResult();
 
-        // 3. 検証 (Assert)
-        assertNotNull(restoredData, "ifftの結果がnullであってはならない");
-        assertEquals(originalData.length, restoredData.length, "復元後の配列長が期待値と異なる");
-        assertComplexArrayEquals(originalData, restoredData, "FFT -> IFFT の結果が元のデータと一致しない");
-    }
-
-    /**
-     * `setOriginDataTransDoubltToComplex` メソッドを間接的にテストする。
-     * このメソッドは private な `complexOriginData` を更新するため直接は検証しにくい。
-     * ここでは `setCalculatedData` を通じて、その一部の動作を検証する。
-     *
-     * 注意: このテストは `fft` メソッドの実装に依存します。
-     */
-    @Test
-    @DisplayName("setCalculatedData: double[] を渡した時に calculatedData が正しく計算されるか")
-    void testSetCalculatedData() {
-        // 1. 準備 (Arrange)
-        FourierModel1D model = new FourierModel1D();
-        double[] input = {1.0, 0.0, 0.0, 0.0};
-        // fft([1,0,0,0]) -> [1,1,1,1] となり、各成分の絶対値(magnitude)は 1.0 になるはず
-        double[] expectedMagnitudes = {1.0, 1.0, 1.0, 1.0};
-
-        // 2. 実行 (Act)
-        model.setCalculatedData(input);
-        double[] actualMagnitudes = model.getCalculatedData();
-
-        // 3. 検証 (Assert)
-        assertNotNull(actualMagnitudes, "計算結果がnullであってはならない");
-        assertEquals(expectedMagnitudes.length, actualMagnitudes.length, "計算結果の配列長が期待値と異なる");
-
-        for (int i = 0; i < expectedMagnitudes.length; i++) {
-            assertEquals(expectedMagnitudes[i], actualMagnitudes[i], DELTA,
-                "calculatedData[" + i + "] の値が期待値と異なる");
+        // 3. 検証: 結果が期待値と一致するか確認
+        assertEquals(expectedOutput.length, actualOutput.length, "配列の長さが一致しません");
+        for (int i = 0; i < expectedOutput.length; i++) {
+            assertEquals(expectedOutput[i].getReal(), actualOutput[i].getReal(), DELTA, "Index " + i + " の実数部が一致しません");
+            assertEquals(expectedOutput[i].getImaginary(), actualOutput[i].getImaginary(), DELTA, "Index " + i + " の虚数部が一致しません");
         }
     }
 
-
     /**
-     * Complex配列同士を比較するための補助メソッド。
-     * 浮動小数点の誤差を考慮して実部と虚部をそれぞれ比較します。
-     * @param expected 期待値の配列
-     * @param actual 実際の値の配列
-     * @param message 検証失敗時のメッセージ
+     * IFFT（逆高速フーリエ変換）の正確性をテストします。
+     * <p>
+     * あるデータに対してFFTを実行し、その結果にIFFTを適用すると、
+     * 元のデータ（スケーリング誤差を除く）に戻ることを確認します。
+     * IFFT(FFT(data)) == data
+     * </p>
      */
-    private void assertComplexArrayEquals(Complex[] expected, Complex[] actual, String message) {
-        for (int i = 0; i < expected.length; i++) {
-            String elementMessage = message + " (要素 " + i + ")";
-            assertEquals(expected[i].getReal(), actual[i].getReal(), DELTA, elementMessage + " の実部が不一致");
-            assertEquals(expected[i].getImaginary(), actual[i].getImaginary(), DELTA, elementMessage + " の虚部が不一致");
+    @Test
+    @DisplayName("IFFTがFFTの結果を元のデータに戻せるかテスト")
+    void testIFFT() {
+        // 1. セットアップ: テストデータ準備
+        Complex[] originalData = {
+            new Complex(1, 0),
+            new Complex(2, 0),
+            new Complex(3, 0),
+            new Complex(4, 0),
+            new Complex(5, 0),
+            new Complex(6, 0),
+            new Complex(7, 0),
+            new Complex(8, 0)
+        };
+        fourierModel.setComplexOriginData(originalData);
+
+        // 2. 実行: FFT -> IFFT
+        // まず順変換 (FFT)
+        fourierModel.fft(0, originalData.length);
+        fourierModel.bitReverseReorder();
+        
+        // 次に逆変換 (IFFT)
+        fourierModel.ifft();
+        Complex[] resultData = fourierModel.getComplexResult();
+
+        // 3. 検証: 逆変換後のデータが元のデータと一致するか確認
+        assertEquals(originalData.length, resultData.length, "配列の長さが一致しません");
+        for (int i = 0; i < originalData.length; i++) {
+            assertEquals(originalData[i].getReal(), resultData[i].getReal(), DELTA, "Index " + i + " の実数部が一致しません");
+            assertEquals(originalData[i].getImaginary(), resultData[i].getImaginary(), DELTA, "Index " + i + " の虚数部が一致しません");
         }
     }
 }
+
+// 注意: このテストをコンパイル・実行するには、
+// 以下の内容を想定したComplexクラスが必要です。
+
+/*
+package Fourier.model;
+
+public class Complex {
+    private final double real;
+    private final double imag;
+
+    public Complex(double real, double imag) {
+        this.real = real;
+        this.imag = imag;
+    }
+
+    public double getReal() { return real; }
+    public double getImag() { return imag; }
+
+    public Complex add(Complex b) {
+        return new Complex(this.real + b.real, this.imag + b.imag);
+    }
+    
+    public Complex sub(Complex b) {
+        return new Complex(this.real - b.real, this.imag - b.imag);
+    }
+
+    public Complex mul(Complex b) {
+        double real = this.real * b.real - this.imag * b.imag;
+        double imag = this.real * b.imag + this.imag * b.real;
+        return new Complex(real, imag);
+    }
+
+    public Complex conjugate() {
+        return new Complex(this.real, -this.imag);
+    }
+
+    public Complex scale(double alpha) {
+        return new Complex(this.real * alpha, this.imag * alpha);
+    }
+    
+    public double magnitude() {
+        return Math.sqrt(real * real + imag * imag);
+    }
+}
+*/

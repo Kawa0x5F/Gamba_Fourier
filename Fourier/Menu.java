@@ -106,13 +106,13 @@ public class Menu {
         Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
                 .filter(aBoolean -> aBoolean && FourierController.Dimensional == 0) // trueかつデータが1次元のときだけ通す
                 .forEach(aBoolean -> {
-                    FileIO.writeSignalToCSV(getSaveFilePath());
+                    // FileIO.writeSignalToCSV(getSaveFilePath());
                 }); // writeSignalToCSVを実行
 
         Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
                 .filter(aBoolean -> aBoolean && FourierController.Dimensional == 1) // trueかつデータが2次元のときだけ通す
                 .forEach(aBoolean -> {
-                    FileIO.writeSignalToImage(getSaveFilePath());
+                    // FileIO.writeSignalToImage(getSaveFilePath());
                 }); // writeSignalToImageを実行
     }
 

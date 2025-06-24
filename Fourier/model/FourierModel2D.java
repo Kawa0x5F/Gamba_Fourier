@@ -1,5 +1,7 @@
 package Fourier.model;
 
+import java.awt.Point;
+
 import Fourier.Complex;
 import Fourier.view.FourierView2D;
 
@@ -21,6 +23,10 @@ public class FourierModel2D extends FourierModel {
                 this.complexOriginData[i][j] = new Complex(originData[i][j], 0);
             }
         }
+    }
+
+    public void computeFromMousePoint(Point point, Boolean isAltDown) {
+
     }
 
     public void setCalculatedData(double[][] originData) {

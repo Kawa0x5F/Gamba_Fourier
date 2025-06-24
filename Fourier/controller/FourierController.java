@@ -11,7 +11,9 @@ import Fourier.Menu;
 public class FourierController extends MouseInputAdapter {
 	Menu menu = new Menu();
 	public static boolean Keepdata = false; // データを保存するのを制御するための変数
-	public static boolean Indata = false; // データを入力するのを制御するための変数
+	public static boolean In1dData = false; // データを入力するのを制御するための変数
+	public static boolean In2dData = false; // データを入力するのを制御するための変数
+	public static Integer Dimensional = 0; // 次元数を制御するための変数
 	public static boolean Respectrum = false; // スペクトルの削除を制御をするための変数
 	private boolean leftPressed = false;
 
