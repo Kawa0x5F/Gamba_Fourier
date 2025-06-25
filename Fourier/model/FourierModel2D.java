@@ -1,42 +1,55 @@
 package Fourier.model;
 
 import java.awt.Point;
-
 import Fourier.Complex;
-import Fourier.FFTUtil; // 新しく作成したFFTUtilをインポート
-import Fourier.view.FourierView2D; // FourierView2D が利用されていないが、インポートは残す
+import Fourier.FFTUtil;
+import Fourier.view.FourierView2D; // パネルサイズ取得のために使用
 
 public class FourierModel2D extends FourierModel {
 
-    // 2Dモデル用のデータ
-    private double[][] initialOriginData; // 元の2Dデータ
-    private double[][] spectrumRecalculationInputData; // スペクトル再計算用の入力データ（全て0から始まる）
-    private Complex[][] complexDataForRecalculationFFT; // spectrumRecalculationInputDataをComplex化したもの
-    private double[][] calculatedPowerSpectrumData; // 計算結果のパワースペクトル
+    // 1. オリジナルの2D画像データ（変更不可）
+    private double[][] initialOriginData; 
+    
+    // 2. 最初にinitialOriginDataから計算された2D-FFTスペクトル（正解データ）
+    private Complex[][] initialComplexDataForFFT; 
 
+    // 3. ユーザー操作によって直接変更されるFFTスペクトルデータ
+    private Complex[][] userModifiedSpectrumData; 
+    
+    // 4. userModifiedSpectrumDataから計算されたパワースペクトルデータ
+    private double[][] recalculatedPowerSpectrumData; 
+
+    // 5. userModifiedSpectrumDataからIFFTで再構成された空間領域（画像）データ
+    private double[][] ifftResultData; 
+    
     // マウス情報
     private Point lastCalculationPoint;
     private boolean isAltDown;
 
     public FourierModel2D(double[][] initialData) {
         this.initialOriginData = initialData;
-
-        // spectrumRecalculationInputData を全て0で初期化
         int rows = initialData.length;
         int cols = initialData[0].length;
-        this.spectrumRecalculationInputData = new double[rows][cols];
-        // デフォルトで0初期化されるので、明示的なループは不要だが意図を明確にするため
+
+        // --- 1. 初期FFTスペクトルの計算 ---
+        // 元データを2D-FFTして「正解」のスペクトルを計算し、initialComplexDataForFFTに保存
+        Complex[][] tempInitialComplex = convertDouble2DToComplex2D(initialData);
+        perform2DFFT(tempInitialComplex); // 2D-FFTを実行
+        this.initialComplexDataForFFT = tempInitialComplex;
+
+        // --- 2. ユーザー操作用スペクトルの初期化 ---
+        // ユーザーが操作するスペクトルデータを全て0で初期化
+        this.userModifiedSpectrumData = new Complex[rows][cols];
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                this.spectrumRecalculationInputData[i][j] = 0.0;
+                this.userModifiedSpectrumData[i][j] = new Complex(0.0, 0.0);
             }
         }
-
-        // complexDataForRecalculationFFT も spectrumRecalculationInputData を元に初期化
-        this.complexDataForRecalculationFFT = convertDouble2DToComplex2D(this.spectrumRecalculationInputData);
-
-        // 初期計算を実行
-        recalculateSpectrum2D();
+        
+        // --- 3. 初期状態での再計算 ---
+        // パワースペクトルとIFFT結果を初期状態で一度計算しておく
+        recalculatePowerSpectrumFromUserModifiedData();
+        performIfftAndNotify();
     }
 
     // --- ゲッターメソッド ---
@@ -44,28 +57,16 @@ public class FourierModel2D extends FourierModel {
         return initialOriginData;
     }
 
-    public double[][] getSpectrumRecalculationInputData() {
-        return spectrumRecalculationInputData;
+    public Complex[][] getUserModifiedSpectrumData() {
+        return userModifiedSpectrumData;
     }
 
-    // 計算結果のパワースペクトルを取得
-    public double[][] getCalculatedPowerSpectrumData() {
-        return calculatedPowerSpectrumData;
+    public double[][] getRecalculatedPowerSpectrumData() {
+        return recalculatedPowerSpectrumData;
     }
 
-    // フーリエ変換結果の実部を取得（2Dの場合、特定の軸の実部など）
-    // 現状のViewの要求と一致させるため、全実部を返す（View側でどう表示するかはViewの責務）
-    public double[][] getRealPartOfRecalculatedSpectrum() {
-        if (complexDataForRecalculationFFT == null) return new double[0][0];
-        int rows = complexDataForRecalculationFFT.length;
-        int cols = complexDataForRecalculationFFT[0].length;
-        double[][] realPart = new double[rows][cols];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                realPart[i][j] = complexDataForRecalculationFFT[i][j].getReal();
-            }
-        }
-        return realPart;
+    public double[][] getIfftResultData() {
+        return ifftResultData;
     }
 
     public Point getLastCalculationPoint() {
@@ -76,9 +77,165 @@ public class FourierModel2D extends FourierModel {
         return isAltDown;
     }
 
+    // --- computeFromMousePointの実装（1D版の設計思想を適用） ---
+    @Override
+    public void computeFromMousePoint(Point point, Boolean isAltDown) {
+        this.lastCalculationPoint = point;
+        this.isAltDown = isAltDown;
+        System.out.println("Model2D: computeFromMousePoint called with Point=" + point + ", Alt=" + isAltDown);
 
-    // --- ヘルパーメソッド ---
-    // double[][] から Complex[][] を生成するヘルパーメソッド
+        if (userModifiedSpectrumData != null && initialComplexDataForFFT != null) {
+            int rows = userModifiedSpectrumData.length;
+            int cols = userModifiedSpectrumData[0].length;
+            
+            // マウス座標を2D配列のインデックスにマッピング
+            int colIndex = (int) (point.getX() * cols / FourierView2D.PANEL_WIDTH);
+            int rowIndex = (int) (point.getY() * rows / FourierView2D.PANEL_HEIGHT);
+
+            if (rowIndex >= 0 && rowIndex < rows && colIndex >= 0 && colIndex < cols) {
+                System.out.println("Model2D: Modifying userModifiedSpectrumData at [" + rowIndex + "][" + colIndex + "]");
+                
+                if (isAltDown) {
+                    // Altキーが押されたら、該当する周波数成分を0にリセット
+                    userModifiedSpectrumData[rowIndex][colIndex] = new Complex(0.0, 0.0);
+                    System.out.println("Model2D: Resetting spectrum component to 0.");
+                } else {
+                    // 「正解」のスペクトルデータを取得
+                    Complex originalSpectrumValue = initialComplexDataForFFT[rowIndex][colIndex];
+                    // ユーザー操作用スペクトルに値をセット（コピー）
+                    userModifiedSpectrumData[rowIndex][colIndex] = new Complex(originalSpectrumValue.getReal(), originalSpectrumValue.getImaginary());
+                    System.out.println("Model2D: Setting spectrum component from initial FFT data.");
+                }
+                
+                // スペクトルが変更されたことをViewに通知
+                firePropertyChange("userModifiedSpectrumData", null, this.userModifiedSpectrumData); 
+
+                // 変更を反映してパワースペクトルとIFFT結果を再計算
+                recalculatePowerSpectrumFromUserModifiedData();
+                performIfftAndNotify();
+
+            } else {
+                System.out.println("Model2D: Calculated index [" + rowIndex + "][" + colIndex + "] is out of bounds.");
+            }
+        } else {
+            System.out.println("Model2D: Data arrays are not initialized.");
+        }
+        
+        firePropertyChange("calculationPoint", null, point);
+        firePropertyChange("altKeyState", null, isAltDown);
+    }
+
+    // --- 再計算メソッド群 ---
+
+    // ユーザーが操作したスペクトルからパワースペクトルを再計算
+    private void recalculatePowerSpectrumFromUserModifiedData() {
+        double[][] oldData = this.recalculatedPowerSpectrumData;
+        if (this.userModifiedSpectrumData == null) {
+            this.recalculatedPowerSpectrumData = new double[0][0];
+        } else {
+            int rows = this.userModifiedSpectrumData.length;
+            int cols = this.userModifiedSpectrumData[0].length;
+            double[][] newData = new double[rows][cols];
+            for (int i = 0; i < rows; i++) {
+                for (int j = 0; j < cols; j++) {
+                    newData[i][j] = this.userModifiedSpectrumData[i][j].magnitude() * this.userModifiedSpectrumData[i][j].magnitude();
+                }
+            }
+            this.recalculatedPowerSpectrumData = newData;
+        }
+        firePropertyChange("recalculatedPowerSpectrumData", oldData, this.recalculatedPowerSpectrumData);
+    }
+
+    // ユーザーが操作したスペクトルから2D-IFFTを実行して空間領域データを再構成
+    private void performIfftAndNotify() {
+        if (this.userModifiedSpectrumData == null) {
+            System.err.println("Model2D: IFFT - userModifiedSpectrumData is null.");
+            this.ifftResultData = new double[0][0];
+            firePropertyChange("ifftResultData", null, this.ifftResultData);
+            return;
+        }
+
+        int rows = userModifiedSpectrumData.length;
+        int cols = userModifiedSpectrumData[0].length;
+        Complex[][] ifftInput = new Complex[rows][cols];
+        for(int i = 0; i < rows; i++) {
+            for(int j = 0; j < cols; j++) {
+                ifftInput[i][j] = new Complex(userModifiedSpectrumData[i][j].getReal(), userModifiedSpectrumData[i][j].getImaginary());
+            }
+        }
+
+        // 2D-IFFTを実行
+        perform2DIFFT(ifftInput);
+
+        double[][] newIfftResultData = new double[rows][cols];
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                newIfftResultData[i][j] = ifftInput[i][j].getReal();
+            }
+        }
+        this.ifftResultData = newIfftResultData;
+
+        firePropertyChange("ifftResultData", null, this.ifftResultData);
+        System.out.println("Model2D: 2D IFFT calculation complete. Notifying View for ifftResultData.");
+    }
+
+    // --- FFT/IFFT ヘルパーメソッド ---
+
+    // 2D FFTを実行する（インプレース）
+    private void perform2DFFT(Complex[][] data) {
+        int rows = data.length;
+        int cols = data[0].length;
+
+        // 行方向FFT
+        for (int i = 0; i < rows; i++) {
+            FFTUtil.fft(data[i], 0, cols);
+            FFTUtil.bitReverseReorder(data[i]);
+        }
+        
+        // 転置
+        Complex[][] transposedData = transpose(data);
+
+        // 列方向FFT（転置後の行）
+        for (int i = 0; i < cols; i++) {
+            FFTUtil.fft(transposedData[i], 0, rows);
+            FFTUtil.bitReverseReorder(transposedData[i]);
+        }
+
+        // 再転置で元に戻す
+        transposedData = transpose(transposedData);
+        // 元の配列に結果をコピーし直す
+        for(int i = 0; i < rows; i++) {
+            System.arraycopy(transposedData[i], 0, data[i], 0, cols);
+        }
+    }
+
+    // 2D IFFTを実行する（インプレース）
+    private void perform2DIFFT(Complex[][] data) {
+        int rows = data.length;
+        int cols = data[0].length;
+
+        // 行方向 IFFT
+        for (int i = 0; i < rows; i++) {
+            FFTUtil.ifft(data[i]);
+        }
+
+        // 転置
+        Complex[][] transposedData = transpose(data);
+
+        // 列方向（転置後の行）IFFT
+        for (int i = 0; i < cols; i++) {
+            FFTUtil.ifft(transposedData[i]);
+        }
+
+        // 再転置して元に戻す
+        transposedData = transpose(transposedData);
+        // 元の配列に結果をコピーし直す
+        for(int i = 0; i < rows; i++) {
+            System.arraycopy(transposedData[i], 0, data[i], 0, cols);
+        }
+    }
+
+    // double[][] から Complex[][] を生成
     private Complex[][] convertDouble2DToComplex2D(double[][] data) {
         if (data == null) return null;
         int rows = data.length;
@@ -92,8 +249,8 @@ public class FourierModel2D extends FourierModel {
         return complexArray;
     }
 
-    // Complex[][] を転置するヘルパーメソッド（既存のものを静的に変更）
-    public static Complex[][] transpose(Complex[][] matrix) {
+    // Complex[][] を転置
+    private Complex[][] transpose(Complex[][] matrix) {
         int rows = matrix.length;
         int cols = matrix[0].length;
         Complex[][] transposed = new Complex[cols][rows];
@@ -103,160 +260,5 @@ public class FourierModel2D extends FourierModel {
             }
         }
         return transposed;
-    }
-
-    // --- computeFromMousePointの実装 ---
-    @Override
-    public void computeFromMousePoint(Point point, Boolean isAltDown) {
-        this.lastCalculationPoint = point;
-        this.isAltDown = isAltDown;
-        System.out.println("Model2D: computeFromMousePoint called with Point=" + point + ", Alt=" + isAltDown);
-
-        if (spectrumRecalculationInputData != null && spectrumRecalculationInputData.length > 0 && spectrumRecalculationInputData[0].length > 0) {
-            // マウス座標を2D配列のインデックスにマッピング (View2Dのパネルサイズを考慮)
-            // ここではView2D.PANEL_WIDTHとPANEL_HEIGHTを仮定
-            int rows = spectrumRecalculationInputData.length;
-            int cols = spectrumRecalculationInputData[0].length;
-            
-            // 例: x座標を列に、y座標を行にマッピング
-            int colIndex = (int) (point.getX() * cols / 400); // 仮にView2Dの幅が400
-            int rowIndex = (int) (point.getY() * rows / 400); // 仮にView2Dの高さが400
-
-            if (rowIndex >= 0 && rowIndex < rows && colIndex >= 0 && colIndex < cols) {
-                System.out.println("Model2D: Modifying spectrumRecalculationInputData at [" + rowIndex + "][" + colIndex + "]");
-                
-                if (isAltDown) {
-                    this.spectrumRecalculationInputData[rowIndex][colIndex] = 0.0; // Altが押されたら0にリセット
-                    System.out.println("Model2D: Resetting to 0.0.");
-                } else {
-                    this.spectrumRecalculationInputData[rowIndex][colIndex] += 50.0; // 50を加算
-                    System.out.println("Model2D: Adding 50.0. New value: " + this.spectrumRecalculationInputData[rowIndex][colIndex]);
-                }
-                
-                // spectrumRecalculationInputDataの変更をcomplexDataForRecalculationFFTに反映
-                this.complexDataForRecalculationFFT = convertDouble2DToComplex2D(this.spectrumRecalculationInputData);
-                
-                // スペクトルを再計算
-                recalculateSpectrum2D();
-                
-                // Viewに通知
-                firePropertyChange("spectrumRecalculationInputData", null, this.spectrumRecalculationInputData); 
-                firePropertyChange("complexDataForRecalculationFFT", null, this.complexDataForRecalculationFFT);
-
-            } else {
-                System.out.println("Model2D: Calculated index [" + rowIndex + "][" + colIndex + "] is out of bounds.");
-            }
-        } else {
-            System.out.println("Model2D: spectrumRecalculationInputData is null or empty, cannot modify.");
-        }
-        
-        // 計算ポイントとAltキーの状態の変更もViewに通知
-        firePropertyChange("calculationPoint", null, point);
-        firePropertyChange("altKeyState", null, isAltDown);
-    }
-
-    // 2D FFTとパワースペクトル計算のメソッド
-    public void recalculateSpectrum2D() {
-        double[][] oldCalculatedData = this.calculatedPowerSpectrumData;
-        
-        if (this.complexDataForRecalculationFFT == null || this.complexDataForRecalculationFFT.length == 0 || this.complexDataForRecalculationFFT[0].length == 0) {
-            this.calculatedPowerSpectrumData = new double[0][0];
-            System.out.println("Model2D: recalculateSpectrum2D - complexDataForRecalculationFFT is null or empty, no calculation.");
-            firePropertyChange("calculatedPowerSpectrumData", oldCalculatedData, this.calculatedPowerSpectrumData);
-            return;
-        }
-
-        int rows = complexDataForRecalculationFFT.length;
-        int cols = complexDataForRecalculationFFT[0].length;
-        System.out.println("Model2D: recalculateSpectrum2D - Performing 2D FFT for [" + rows + "x" + cols + "]");
-
-        // FFTは配列をインプレースで変更するため、コピーを作成してFFTに渡す
-        Complex[][] tempComplexData = new Complex[rows][cols];
-        for(int i = 0; i < rows; i++) {
-            for(int j = 0; j < cols; j++) {
-                tempComplexData[i][j] = this.complexDataForRecalculationFFT[i][j];
-            }
-        }
-        
-        // 2D FFT（行→転置→行→転置）
-        // 行方向FFT
-        for (int i = 0; i < rows; i++) {
-            Complex[] row = tempComplexData[i];
-            // 2のべき乗チェック（FFTUtil.fft内で再度行われるが、ここでも確認可能）
-            if ((row.length & (row.length - 1)) != 0) {
-                System.err.println("Model2D: Row " + i + " length is not a power of 2 for FFT: " + row.length);
-                return; // エラー処理
-            }
-            FFTUtil.fft(row, 0, row.length);
-            FFTUtil.bitReverseReorder(row);
-        }
-
-        // 転置
-        tempComplexData = transpose(tempComplexData);
-
-        // 列方向FFT（転置後の行）
-        for (int i = 0; i < cols; i++) { // cols が転置後の行数
-            Complex[] colAsRow = tempComplexData[i];
-            if ((colAsRow.length & (colAsRow.length - 1)) != 0) {
-                System.err.println("Model2D: Column (transposed row) " + i + " length is not a power of 2 for FFT: " + colAsRow.length);
-                return; // エラー処理
-            }
-            FFTUtil.fft(colAsRow, 0, colAsRow.length);
-            FFTUtil.bitReverseReorder(colAsRow);
-        }
-
-        // 再転置で元に戻す
-        tempComplexData = transpose(tempComplexData);
-
-        // パワースペクトルを計算
-        double[][] newCalculatedData = new double[rows][cols];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                newCalculatedData[i][j] = tempComplexData[i][j].magnitude() * tempComplexData[i][j].magnitude();
-            }
-        }
-        this.calculatedPowerSpectrumData = newCalculatedData;
-
-        System.out.println("Model2D: 2D FFT calculation complete. Notifying View.");
-        firePropertyChange("calculatedPowerSpectrumData", oldCalculatedData, this.calculatedPowerSpectrumData);
-    }
-
-    // 2D IFFT（必要であれば）
-    public void ifft2D() {
-        if (this.complexDataForRecalculationFFT == null || this.complexDataForRecalculationFFT.length == 0 || this.complexDataForRecalculationFFT[0].length == 0) {
-            System.err.println("Model2D: IFFT2D - complexDataForRecalculationFFT is null or empty.");
-            return;
-        }
-
-        int rows = complexDataForRecalculationFFT.length;
-        int cols = complexDataForRecalculationFFT[0].length;
-
-        // IFFTは配列をインプレースで変更するため、コピーを作成
-        Complex[][] tempComplexData = new Complex[rows][cols];
-        for(int i = 0; i < rows; i++) {
-            for(int j = 0; j < cols; j++) {
-                tempComplexData[i][j] = this.complexDataForRecalculationFFT[i][j];
-            }
-        }
-
-        // 行方向 IFFT
-        for (int i = 0; i < rows; i++) {
-            FFTUtil.ifft(tempComplexData[i]);
-        }
-
-        // 転置
-        tempComplexData = transpose(tempComplexData);
-
-        // 列方向（転置後の行）IFFT
-        for (int i = 0; i < cols; i++) {
-            FFTUtil.ifft(tempComplexData[i]);
-        }
-
-        // 再転置して元に戻す
-        tempComplexData = transpose(tempComplexData);
-
-        // 結果をcomplexDataForRecalculationFFTに反映
-        this.complexDataForRecalculationFFT = tempComplexData;
-        firePropertyChange("complexDataForRecalculationFFT", null, this.complexDataForRecalculationFFT);
     }
 }
