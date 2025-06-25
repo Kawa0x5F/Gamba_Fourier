@@ -1,134 +1,211 @@
 package Fourier.model;
 
 import java.awt.Point;
-
 import Fourier.Complex;
-import Fourier.view.FourierView1D;
+import Fourier.FFTUtil;
+import Fourier.view.FourierView1D; // PANEL_WIDTH, PANEL_HEIGHT を使用するため
 
-public class FourierModel1D extends FourierModel  {
+public class FourierModel1D extends FourierModel {
 
-	private FourierView1D fourierView1D;
+    // 1. オリジナルの波形データ（変更不可）
+    private double[] initialOriginData; 
+    
+    // 2. 最初にinitialOriginDataから計算されたFFTスペクトル
+    private Complex[] initialComplexDataForFFT; 
 
-    private double[] originData;
-    private Complex[] complexOriginData;
-    private double[] calculatedData;
+    // 3. ユーザー操作によって直接変更されるFFTスペクトルデータ
+    private Complex[] userModifiedSpectrumData; 
+    
+    // 4. 最初にinitialOriginDataから計算されたパワースペクトルデータ
+    private double[] initialCalculatedPowerSpectrumData;
+
+    // 5. 計算結果用のデータ（パワースペクトル） - userModifiedSpectrumDataから計算
+    private double[] recalculatedPowerSpectrumData; 
+
+    // 6. userModifiedSpectrumDataからIFFTで再構成された時間領域データ
+    private double[] ifftResultData; 
+    
+    private Point lastCalculationPoint;
+    private boolean isAltDown;
 
     public FourierModel1D() {
+        // デフォルトコンストラクタ
     }
 
-    public FourierModel1D(double[] originData) {
-        this.originData = originData;
-        setOriginDataTransDoubltToComplex(originData);
-    }
-
-    public double[] getOriginData() {
-        return originData;
-    }
-
-    public double[] getCalculatedData() {
-        return calculatedData; 
-    }
-
-    public Complex[] getComplexResult() {
-    return this.complexOriginData;
-    }
-
-    public void setComplexOriginData(Complex[] origin) {
-        this.complexOriginData = origin.clone();  // cloneでコピーを作ってから返す
-    }
-
-    public void setOriginDataTransDoubltToComplex(double[] originData) {
-        this.complexOriginData = new Complex[originData.length];
-        Integer i = 0;
-        for(double d : originData) {
-            this.complexOriginData[i] = new Complex(d, 0);
-            i += 1;
-        }
-    }
-
-    public void computeFromMousePoint(Point point, Boolean isAltDown) {
-
-    }
-
-    public void setCalculatedData(double[] originData) {
-        double[] oldCalculatedData = this.calculatedData;
-        double[] newCalculatedData = new double[originData.length];
-        Integer N = this.complexOriginData.length;
-
+    public FourierModel1D(double[] initialData) {
+        this.initialOriginData = initialData;
         
-        fft(0, N);
-        bitReverseReorder();
-
-        Integer i = 0;
-        for(Complex c : this.complexOriginData) {
-            newCalculatedData[i] = c.magnitude() * c.magnitude();  // パワースペクトルを計算
-            i += 1;
+        // initialOriginDataから一度目のFFT用Complex配列を生成
+        Complex[] tempInitialComplex = convertDoubleToComplex(initialData);
+        if ((tempInitialComplex.length & (tempInitialComplex.length - 1)) != 0) {
+            System.err.println("Model1D: Initial FFT input size is not a power of 2: " + tempInitialComplex.length);
+            // エラーハンドリング：サイズが2の冪乗でない場合の処理
+            return;
         }
-        this.calculatedData = newCalculatedData;
+        FFTUtil.fft(tempInitialComplex, 0, tempInitialComplex.length); // FFTを実行
+        FFTUtil.bitReverseReorder(tempInitialComplex); // ビット反転順序
+        this.initialComplexDataForFFT = tempInitialComplex;
 
-        // Viewに変更した通知を送る
-        firePropertyChange("1dData", oldCalculatedData, this.calculatedData);
+        // initialOriginDataから初期のパワースペクトルを計算して保存（これは初期のFFT結果から）
+        this.initialCalculatedPowerSpectrumData = calculatePowerSpectrumFromFFTResult(this.initialComplexDataForFFT);
+        firePropertyChange("initialCalculatedPowerSpectrumData", null, this.initialCalculatedPowerSpectrumData); 
+
+        // ユーザーが操作するスペクトルデータを全て0で初期化
+        this.userModifiedSpectrumData = new Complex[initialComplexDataForFFT.length]; // 配列のサイズは元のFFT結果と同じ
+        for (int i = 0; i < userModifiedSpectrumData.length; i++) {
+            this.userModifiedSpectrumData[i] = new Complex(0.0, 0.0); // 実部も虚部も0で初期化
+        }
+        
+        // 初期状態でのパワースペクトルとIFFT結果を計算
+        recalculateSpectrumFromUserModifiedData();
+        performIfftAndNotify();
     }
 
-    // ビット反転インデックス
-    public int bitReverse(int x, int bits) {
-        int y = 0;
-        for (int i = 0; i < bits; i++) {
-            y = (y << 1) | (x & 1);
-            x >>= 1;
-        }
-        return y;
+    // --- ゲッターメソッド ---
+    public double[] getInitialOriginData() {
+        return initialOriginData;
     }
 
-    // ビット反転で並び替え
-    public void bitReverseReorder() {
-        Integer N = this.complexOriginData.length;
+    public double[] getRecalculatedPowerSpectrumData() {
+        return recalculatedPowerSpectrumData;
+    }
+
+    public double[] getInitialCalculatedPowerSpectrumData() {
+        return initialCalculatedPowerSpectrumData;
+    }
+    
+    // IFFTで再構成された時間領域データ
+    public double[] getIfftResultData() {
+        return ifftResultData;
+    }
+
+    public Complex[] getUserModifiedSpectrumData() {
+        return userModifiedSpectrumData;
+    }
+
+    public Point getLastCalculationPoint() {
+        return lastCalculationPoint;
+    }
+
+    public boolean getIsAltDown() {
+        return isAltDown;
+    }
+
+    // --- ヘルパーメソッド ---
+    private Complex[] convertDoubleToComplex(double[] data) {
+        if (data == null) return null;
+        Complex[] complexArray = new Complex[data.length];
+        for (int i = 0; i < data.length; i++) {
+            complexArray[i] = new Complex(data[i], 0);
+        }
+        return complexArray;
+    }
+
+    // FFT済みのComplex配列からパワースペクトルを計算するヘルパーメソッド
+    private double[] calculatePowerSpectrumFromFFTResult(Complex[] fftResultData) {
+        if (fftResultData == null || fftResultData.length == 0) return new double[0];
+        double[] powerSpectrum = new double[fftResultData.length];
+        for(int i = 0; i < fftResultData.length; i++) {
+            powerSpectrum[i] = fftResultData[i].magnitude() * fftResultData[i].magnitude();
+        }
+        return powerSpectrum;
+    }
+
+    // --- メインロジック ---
+    @Override
+    public void computeFromMousePoint(Point point, Boolean isAltDown) {
+        this.lastCalculationPoint = point;
+        this.isAltDown = isAltDown;
+        System.out.println("Model1D: computeFromMousePoint called with Point=" + point + ", Alt=" + isAltDown);
+
+        // userModifiedSpectrumData と initialComplexDataForFFT の null チェックを追加
+        if (userModifiedSpectrumData != null && userModifiedSpectrumData.length > 0 && initialComplexDataForFFT != null) {
+            // X座標を周波数ビンのインデックスにマッピング
+            int index = (int) (point.getX() * userModifiedSpectrumData.length / FourierView1D.PANEL_WIDTH); 
             
-        int bits = Integer.numberOfTrailingZeros(N);
-        for (int i = 0; i < N; i++) {
-            int j = bitReverse(i, bits);
-            if (i < j) {
-                Complex temp = this.complexOriginData[i];
-                this.complexOriginData[i] = this.complexOriginData[j];
-                this.complexOriginData[j] = temp;
+            if (index >= 0 && index < userModifiedSpectrumData.length) {
+                System.out.println("Model1D: Modifying userModifiedSpectrumData at index " + index + " (from x=" + point.getX() + ")");
+                
+                if (isAltDown) {
+                    // Altキーが押されたら、該当する周波数成分を0にリセットする
+                    userModifiedSpectrumData[index] = new Complex(0, 0); 
+                    System.out.println("Model1D: Resetting spectrum bin " + index + " to 0.");
+                } else {
+                    // マウスのY座標は無視する
+                    // クリックされた位置に対応する「元のスペクトルデータ」を取得
+                    Complex originalSpectrumValue = initialComplexDataForFFT[index];
+                    
+                    // ユーザーが操作するスペクトルデータに、元のスペクトル値をセットする
+                    // 安全のため、新しいComplexオブジェクトとしてコピーする
+                    userModifiedSpectrumData[index] = new Complex(originalSpectrumValue.getReal(), originalSpectrumValue.getImaginary());
+                    System.out.println("Model1D: Setting spectrum bin " + index + " from initial FFT data.");
+                }
+                
+                // スペクトルが変更されたことをViewに通知
+                firePropertyChange("userModifiedSpectrumData", null, this.userModifiedSpectrumData); 
+
+                // 変更されたスペクトルからパワースペクトルを再計算
+                recalculateSpectrumFromUserModifiedData();
+                
+                // 変更されたスペクトルから時間領域の波形を再構成（IFFT）
+                performIfftAndNotify();
+                
+            } else {
+                System.out.println("Model1D: Calculated index " + index + " is out of bounds for data length " + userModifiedSpectrumData.length);
             }
+        } else {
+            System.out.println("Model1D: userModifiedSpectrumData or initialComplexDataForFFT is null or empty, cannot modify.");
         }
+        
+        // 計算ポイントとAltキーの状態の変更もViewに通知
+        firePropertyChange("calculationPoint", null, point);
+        firePropertyChange("altKeyState", null, isAltDown);
     }
 
-    // FFT
-    public  void fft(int start, int n) {
-        if (n == 1) return;
-        int half = n / 2;
-            
-
-        for (int k = 0; k < half; k++) {
-            int i = start + k;
-            int j = i + half;
-
-            double angle = -2 * Math.PI * k / n;
-            Complex w = new Complex(Math.cos(angle), Math.sin(angle));
-            Complex t = this.complexOriginData[j];
-            Complex u = this.complexOriginData[i];
-            this.complexOriginData[i] = u.add(t);
-            this.complexOriginData[j] = w.mul(u.sub(t));
+    // ユーザーが操作したスペクトルデータからパワースペクトルを再計算し、Viewに通知するメソッド
+    private void recalculateSpectrumFromUserModifiedData() {
+        double[] oldCalculatedData = this.recalculatedPowerSpectrumData;
+        
+        if (this.userModifiedSpectrumData == null || this.userModifiedSpectrumData.length == 0) {
+            this.recalculatedPowerSpectrumData = new double[0];
+            System.out.println("Model1D: recalculateSpectrumFromUserModifiedData - userModifiedSpectrumData is null or empty, no calculation performed.");
+            firePropertyChange("recalculatedPowerSpectrumData", oldCalculatedData, this.recalculatedPowerSpectrumData);
+            return;
         }
 
-        fft(start, half);
-        fft(start + half, half);
-            
+        Integer N = this.userModifiedSpectrumData.length;
+        System.out.println("Model1D: recalculateSpectrumFromUserModifiedData - Calculating power spectrum from user modified data for N=" + N);
+
+        // FFT済みのデータからパワースペクトルを計算
+        this.recalculatedPowerSpectrumData = calculatePowerSpectrumFromFFTResult(this.userModifiedSpectrumData);
+
+        System.out.println("Model1D: Power spectrum calculation from user modified data complete. Notifying View.");
+        firePropertyChange("recalculatedPowerSpectrumData", oldCalculatedData, this.recalculatedPowerSpectrumData);
     }
 
-    // IFFT
-    public  void ifft() {
-        for (int i = 0; i < this.complexOriginData.length; i++) {
-            this.complexOriginData[i] = this.complexOriginData[i].conjugate();
+    // IFFTを実行し、時間領域の波形を再構成してViewに通知するメソッド
+    private void performIfftAndNotify() {
+        if (this.userModifiedSpectrumData == null || this.userModifiedSpectrumData.length == 0) {
+            System.err.println("Model1D: IFFT - userModifiedSpectrumData is null or empty.");
+            return;
+        }
+        
+        // IFFTはComplex配列を直接変更するため、IFFT用のコピーを作成
+        Complex[] ifftInput = new Complex[userModifiedSpectrumData.length];
+        for (int i = 0; i < userModifiedSpectrumData.length; i++) {
+            ifftInput[i] = new Complex(userModifiedSpectrumData[i].getReal(), userModifiedSpectrumData[i].getImaginary());
         }
 
-        fft(0, this.complexOriginData.length);
-        bitReverseReorder();
-
-        for (int i = 0; i < this.complexOriginData.length; i++) {
-            this.complexOriginData[i] = this.complexOriginData[i].conjugate().scale(1.0 / this.complexOriginData.length);
+        FFTUtil.ifft(ifftInput); // IFFTを実行
+        
+        // IFFT結果（時間領域のデータ）の実部を取得
+        double[] newIfftResultData = new double[ifftInput.length];
+        for (int i = 0; i < ifftInput.length; i++) {
+            newIfftResultData[i] = ifftInput[i].getReal();
         }
+        this.ifftResultData = newIfftResultData;
+
+        firePropertyChange("ifftResultData", null, this.ifftResultData);
+        System.out.println("Model1D: IFFT calculation complete. Notifying View for ifftResultData.");
     }
 }
