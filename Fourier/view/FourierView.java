@@ -4,6 +4,8 @@ import Fourier.model.FourierModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.HashMap;
@@ -12,16 +14,17 @@ import java.util.Map;
 public abstract class FourierView implements PropertyChangeListener {
     private final FourierModel model;
     protected final JFrame frame;
-    protected final Map<String, JPanel> panels; // パネルを名前で管理
+    // *** 変更点 *** JPanelを直接保持するように変更
+    protected final Map<String, JPanel> panels;
 
     public FourierView(FourierModel model, String title) {
         this.model = model;
         this.model.addPropertyChangeListener(this);
 
         this.frame = new JFrame(title);
+        // *** 変更点 *** JPanelを直接保持するように変更
         this.panels = new HashMap<>();
 
-        // ウィンドウの初期設定
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
     }
@@ -29,35 +32,51 @@ public abstract class FourierView implements PropertyChangeListener {
     protected FourierModel getModel() {
         return this.model;
     }
-
-    /**
-     * 管理対象のパネルをウィンドウに追加する
-     * @param name パネルを識別する名前
-     * @param panel 追加するパネルインスタンス
-     */
+    
+    // *** 変更点 *** JPanelを直接受け取るように変更
     protected void addPanel(String name, JPanel panel) {
         this.panels.put(name, panel);
-        this.frame.add(panel); // JFrameに直接追加
+        this.frame.add(panel);
     }
 
-    /**
-     * UIの更新をイベントディスパッチスレッドで安全に実行する
-     */
     @Override
     public void propertyChange(PropertyChangeEvent e) {
         SwingUtilities.invokeLater(this::updateView);
     }
     
-    /**
-     * ウィンドウを表示状態にする
-     */
     public void setVisible(boolean visible) {
         this.frame.setVisible(visible);
     }
 
+    // *** 変更点 *** ここから下のリスナー登録メソッドを修正
+
     /**
-     * モデルの変更をビューに反映させるための抽象メソッド
-     * サブクラスで、モデルからデータを取得し、対応するパネルにセットする処理を実装する
+     * 指定されたキーを持つパネルにマウスリスナーを登録します。
+     * @param panelKey パネルを識別するキー（タイトル文字列）
+     * @param listener 登録するマウスリスナー
      */
+    public void addMouseListenerToPanel(String panelKey, MouseListener listener) {
+        JPanel panel = this.panels.get(panelKey);
+        if (panel != null) {
+            panel.addMouseListener(listener);
+        } else {
+            System.err.println("Warning: Panel with key '" + panelKey + "' not found.");
+        }
+    }
+
+    /**
+     * 指定されたキーを持つパネルにマウスモーションリスナーを登録します。
+     * @param panelKey パネルを識別するキー（タイトル文字列）
+     * @param listener 登録するマウスモーションリスナー
+     */
+    public void addMouseMotionListenerToPanel(String panelKey, MouseMotionListener listener) {
+        JPanel panel = this.panels.get(panelKey);
+        if (panel != null) {
+            panel.addMouseMotionListener(listener);
+        } else {
+            System.err.println("Warning: Panel with key '" + panelKey + "' not found.");
+        }
+    }
+
     protected abstract void updateView();
 }

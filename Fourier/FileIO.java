@@ -7,6 +7,9 @@ import java.io.FileWriter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
@@ -15,17 +18,26 @@ import Fourier.model.FourierModel1D;
 
 public class FileIO {
 
-     /**
-	 * 離散フーリエ1次元変換のための元データ(自分で用意した信号(ファイル形式はCSV予定))。
-	 */
-    public static double[] readSignalFromCSV (String filePath) {
+    /**
+     * 離散フーリエ1次元変換のための元データ(自分で用意した信号(ファイル形式はCSV予定))。
+     * @param resourcePath クラスパスからのリソースの絶対パス (例: "/my_signal.csv")
+     */
+    public static double[] readSignalFromCSV (String resourcePath) { // 引数名を変更して意図を明確化
         List<Double> signalList = new ArrayList<>();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+        // InputStreamを取得
+        InputStream is = FileIO.class.getResourceAsStream(resourcePath);
+        if (is == null) {
+            System.err.println("リソースが見つかりません: " + resourcePath);
+            return new double[0];
+        }
+
+        // InputStreamをBufferedReaderで読み込む
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;
 
             while ((line = br.readLine()) != null) {
-                line = line.trim();  // 前後の空白を除去
+                line = line.trim();
                 if (!line.isEmpty()) {
                     signalList.add(Double.parseDouble(line));
                 }
@@ -47,11 +59,22 @@ public class FileIO {
     
 
     /**
-	 * 離散フーリエ2次元変換のための元データ(自分で用意した画像)。
-	 */
-    public static double[][][] readSignalFromImage (String filePath) {
-        try {
-            BufferedImage image = ImageIO.read(new File(filePath));
+     * 離散フーリエ2次元変換のための元データ
+     * @param resourcePath クラスパスからのリソースの絶対パス
+     */
+    public static double[][][] readSignalFromImage (String resourcePath) {
+        try (InputStream is = FileIO.class.getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                System.err.println("リソースが見つかりません: " + resourcePath); 
+                return null;
+            }
+
+            BufferedImage image = ImageIO.read(is);
+            if (image == null) {
+                System.err.println("画像の読み込みに失敗しました(サポートされていない形式の可能性があります): " + resourcePath);
+                return null;
+            }
+
             int width = image.getWidth();
             int height = image.getHeight();
 
@@ -72,15 +95,11 @@ public class FileIO {
             return result;
             
         } catch (IOException e) {
-            /*
-             * エラー処理について
-             * 開発中はSystem.err.printlnで、実装時はダイアログ表示等に変更
-             */
-            System.err.println("画像の読み込みに失敗しました: " + e.getMessage()); 
+            System.err.println("画像の読み込み中にエラーが発生しました: " + e.getMessage()); 
+            e.printStackTrace();
             return null;
         }
     }
-
      /**
      * 1次元データを保存
      */

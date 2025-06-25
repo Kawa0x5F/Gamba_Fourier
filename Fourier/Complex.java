@@ -125,6 +125,27 @@ public class Complex {
     }
 
     /**
+     * この複素数の偏角（位相）をラジアンで返すメソッド
+     * 範囲は $-\pi$ から $\pi$ まで
+     * @return この複素数の偏角
+     */
+    public double getPhase() {
+        return Math.atan2(imag, real);
+    }
+
+    /**
+     * 極座標形式（絶対値と偏角）から新しい {@code Complex} オブジェクトを生成するファクトリメソッド
+     * @param magnitude 複素数の絶対値
+     * @param phase 複素数の偏角（ラジアン）
+     * @return 指定された絶対値と偏角を持つ新規 {@code Complex} オブジェクト
+     */
+    public static Complex fromPolar(double magnitude, double phase) {
+        double realPart = magnitude * Math.cos(phase);
+        double imagPart = magnitude * Math.sin(phase);
+        return new Complex(realPart, imagPart);
+    }
+
+    /**
      * この複素数の文字列表現を返す
      * @return この複素数を文字列で表現した文字列
      */
