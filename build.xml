@@ -30,6 +30,9 @@
 	<target name="prepare" description="prepare to compile">
 		<mkdir dir="${destdir}" />
 		<mkdir dir="${test.dest.dir}" />
+		<copy todir="${destdir}">
+			<fileset dir="Resources" />
+		</copy>
 		<exec executable="date" spawn="false" />
 	</target>
 
