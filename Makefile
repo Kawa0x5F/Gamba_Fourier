@@ -5,7 +5,7 @@ STYLE_YAML  = clang-format-for-java.yaml
 STYLE_CONF  = _clang-format
 
 # .PHONY ディレクティブを追加し、アクションを表すターゲットをすべて指定します。
-.PHONY: all clean test install doc wipe zip format app check if ifTrue ifFalse ifThenElse while whileTrue whileFalse for forEach
+.PHONY: all clean test package doc wipe zip format app check if ifTrue ifFalse ifThenElse while whileTrue whileFalse for forEach
 
 all:
 	$(ANT) all
@@ -16,8 +16,8 @@ clean:
 test:
 	$(ANT) test
 
-install:
-	$(ANT) install
+package:
+	$(ANT) package
 
 doc:
 	$(ANT) doc
@@ -38,9 +38,9 @@ format:
 	for each in $(SOURCES) ; do echo ---[$${each}]--- ; clang-format -style=file $${each} ; echo ; done
 	@rm -f $(STYLE_CONF)
 
-app: install
-	@xattr -cr ./Example.app
-	open ./Example.app
+app: package
+	@xattr -cr ./build/Fourier.app
+	open ./build/Fourier.app
 
 check: if while for ifTrue ifFalse ifThenElse whileTrue whileFalse forEach
 	@:

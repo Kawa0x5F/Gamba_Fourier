@@ -4,6 +4,9 @@
 # Build directory
 build/
 
+# app files
+*.app
+
 # Package files
 *.jar
 *.war
