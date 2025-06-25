@@ -6,14 +6,18 @@
 	<property name="packagenames" value="Fourier.controller,Fourier.model,Fourier.view" />
 	<property name="destdir" value="./Classes" />
 	<property name="docdir" value="./JavaDoc" />
-	<property name="instdir" value="./Fourier.app/Contents/Resources/Java" />
 	<property name="copyright" value="Copyright 2025 Kawasaki Yuichi All Rights Reserved." />
 	<property name="zipname" value="${ant.project.name}" />
+
+	<property name="main.class" value="Fourier.example.Example" />
+	<property name="app.version" value="1.0" />
+	<property name="mac.bundle.id" value="com.example.fourier" />
+	<property name="build.dir" value="${basedir}/build" />
+
 
 	<property name="test.src.dir" value="test" />
 	<property name="test.dest.dir" value="${destdir}/test-classes" />
 	<property name="lib.dir" value="/home/fft/lib" />
-
 	<path id="junit.classpath">
 		<fileset dir="${lib.dir}" includes="**/*.jar" />
 	</path>
@@ -58,6 +62,47 @@
 		<exec executable="date" spawn="false" />
 	</target>
 
+	<target name="package" depends="jar" description="package the application for macOS using jpackage">
+		<echo>Packaging for macOS...</echo>
+		<mkdir dir="${build.dir}" />
+		<exec executable="jpackage" failonerror="true">
+			<arg value="--type" />
+			<arg value="app-image" />
+			<arg value="--dest" />
+			<arg path="${build.dir}" />
+			<arg value="--name" />
+			<arg value="${ant.project.name}" />
+			<arg value="--input" />
+			<arg path="${basedir}" />
+			<arg value="--main-jar" />
+			<arg value="${package}.jar" />
+			<arg value="--main-class" />
+			<arg value="${main.class}" />
+			<arg value="--app-version" />
+			<arg value="${app.version}" />
+			<arg value="--copyright" />
+			<arg value="${copyright}" />
+			<arg value="--mac-package-identifier" />
+			<arg value="${mac.bundle.id}" />
+			</exec>
+		<echo>Successfully created ${ant.project.name}.app in '${build.dir}' directory.</echo>
+	</target>
+
+	<target name="clean" description="cleaning">
+		<delete dir="${build.dir}" />
+		<delete dir="${destdir}" />
+		<delete file="${package}.jar" />
+		<delete dir="${docdir}" />
+		<delete dir="./Fourier.app" />
+		<delete file="../${zipname}.zip" />
+		<delete>
+			<fileset dir="Fourier" includes="**/*.class" />
+			<fileset dir="${test.src.dir}" includes="**/*.class" />
+		</delete>
+		<exec executable="date" spawn="false" />
+	</target>
+
+
 	<target name="compile-test" depends="compile" description="compile test sources">
 		<javac
 			srcdir="${test.src.dir}"
@@ -85,29 +130,6 @@
 				</fileset>
 			</testclasses>
 		</junitlauncher>
-		<exec executable="date" spawn="false" />
-	</target>
-
-
-	<target name="clean" description="cleaning">
-		<delete dir="${destdir}" />
-		<delete file="${package}.jar" />
-		<delete dir="${docdir}" />
-		<delete dir="${instdir}" />
-		<delete file="../${zipname}.zip" />
-		<delete>
-			<fileset dir="Fourier" includes="**/*.class" />
-			<fileset dir="${test.src.dir}" includes="**/*.class" />
-		</delete>
-		<exec executable="date" spawn="false" />
-	</target>
-
-
-	<target name="install" depends="all" description="install into application">
-		<copy file="${package}.jar" todir="${instdir}" />
-		<exec executable="chmod">
-			<arg line="755 ${instdir}/../../MacOS/applet" />
-		</exec>
 		<exec executable="date" spawn="false" />
 	</target>
 
