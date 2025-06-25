@@ -13,7 +13,7 @@ public class Example {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             double[] signalData = FourierData.dataSampleWave();
-            FourierModel1D model = new FourierModel1D();
+            FourierModel1D model = new FourierModel1D(signalData);
             // 静的フィールドにインスタンスを代入して参照を保持する
             view = new FourierView1D(model);
 

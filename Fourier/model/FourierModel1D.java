@@ -9,8 +9,21 @@ public class FourierModel1D extends FourierModel  {
 
 	private FourierView1D fourierView1D;
 
+    private double[] originData;
     private Complex[] complexOriginData;
     private double[] calculatedData;
+
+    public FourierModel1D() {
+    }
+
+    public FourierModel1D(double[] originData) {
+        this.originData = originData;
+        setOriginDataTransDoubltToComplex(originData);
+    }
+
+    public double[] getOriginData() {
+        return originData;
+    }
 
     public double[] getCalculatedData() {
         return calculatedData; 
@@ -38,7 +51,6 @@ public class FourierModel1D extends FourierModel  {
     }
 
     public void setCalculatedData(double[] originData) {
-        setOriginDataTransDoubltToComplex(originData);
         double[] oldCalculatedData = this.calculatedData;
         double[] newCalculatedData = new double[originData.length];
         Integer N = this.complexOriginData.length;
