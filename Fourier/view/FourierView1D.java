@@ -38,6 +38,10 @@ public class FourierView1D extends FourierView {
     protected void updateView() {
         FourierModel1D model1D = (FourierModel1D) getModel();
 
+        // モデルからオリジナル(未処理)のデータを表示
+        double[] originData = model1D.getOriginData();
+        ((SignalPanel) panels.get(KEY_ORIGINAL)).setData(originData);
+
         // モデルからパワースペクトルを取得して表示
         double[] powerSpectrum = model1D.getCalculatedData();
         ((SignalPanel) panels.get(KEY_SPECTRUM)).setData(powerSpectrum);
