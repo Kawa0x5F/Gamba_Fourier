@@ -4,6 +4,8 @@ import Fourier.model.FourierModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.HashMap;
@@ -53,6 +55,16 @@ public abstract class FourierView implements PropertyChangeListener {
      */
     public void setVisible(boolean visible) {
         this.frame.setVisible(visible);
+    }
+
+    // 全てのパネルにMouseListenerを追加するメソッド
+    public void addMouseListenerToAllPanels(MouseListener listener) {
+        this.panels.get("User Modified Power Spectrum").addMouseListener(listener);
+    }
+
+    // 全てのパネルにMouseMotionListenerを追加するメソッド
+    public void addMouseMotionListenerToAllPanels(MouseMotionListener listener) {
+        this.panels.get("User Modified Power Spectrum").addMouseMotionListener(listener);
     }
 
     /**
