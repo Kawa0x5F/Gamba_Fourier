@@ -54,7 +54,6 @@ public class FourierModel2D extends FourierModel {
         int line = complexOriginData.length;
         int column = complexOriginData[0].length;
         FourierModel1D fft1D = new FourierModel1D();
-
         // 行方向
         for (int i = 0; i < line; i++) {
             Complex[] row = complexOriginData[i];
@@ -64,6 +63,7 @@ public class FourierModel2D extends FourierModel {
             }
 
             fft1D.setCalculatedData(rowReal);
+
             Complex[] ffted = fft1D.getComplexResult();
             for (int j = 0; j < column; j++) {
                 complexOriginData[i][j] = ffted[j];
@@ -73,19 +73,19 @@ public class FourierModel2D extends FourierModel {
         // 転置
         complexOriginData = transpose(complexOriginData);
 
-        // 列方向（＝転置後の行）
-    for (int i = 0; i < column; i++) {
-        Complex[] row = complexOriginData[i];
+            // 列方向（＝転置後の行）
+        for (int i = 0; i < column; i++) {
+            Complex[] row = complexOriginData[i];
 
-        fft1D.setComplexOriginData(row);     // 複素数をそのまま渡す
-        fft1D.fft(0, row.length);      // FFT実行
-        fft1D.bitReverseReorder();           // 並び替え
+            fft1D.setComplexOriginData(row);     // 複素数をそのまま渡す
+            fft1D.fft(0, row.length);      // FFT実行
+            fft1D.bitReverseReorder();           // 並び替え
 
-        Complex[] ffted = fft1D.getComplexResult();
-        for (int j = 0; j < line; j++) {
-            complexOriginData[i][j] = ffted[j];
+            Complex[] ffted = fft1D.getComplexResult();
+            for (int j = 0; j < line; j++) {
+                complexOriginData[i][j] = ffted[j];
+            }
         }
-    }
 
 
         // 再転置で元に戻す
