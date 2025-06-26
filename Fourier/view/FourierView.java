@@ -78,5 +78,15 @@ public abstract class FourierView implements PropertyChangeListener {
         }
     }
 
+    /**
+     * 管理している全てのパネルにマウスリスナーを登録します。
+     * @param listener 登録するマウスリスナー
+     */
+    public void addMouseListenerToAllPanels(MouseListener listener) {
+        for (JPanel panel : this.panels.values()) {
+            panel.addMouseListener(listener);
+        }
+    }
+
     protected abstract void updateView();
 }

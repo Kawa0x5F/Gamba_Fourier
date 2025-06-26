@@ -12,14 +12,14 @@ public class Example {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             // --- 初期データで1Dデモを開始 ---
-            restart1DDemoWithData(FourierData.dataSampleWave());
+            restart1DDemoWithData(FourierData.dataSampleWave()); //
 
             // --- 初期データで2Dデモを開始 ---
-            double[][][] initialColorData = FileIO.readSignalFromImage("/JosephFourier2.jpg");
-            if (initialColorData != null) {
-                restart2DDemoWithData(initialColorData);
+            double[][][] initialColorData = FileIO.readSignalFromImage("/JosephFourier2.jpg"); //
+            if (initialColorData != null) { //
+                restart2DDemoWithData(initialColorData); //
             } else {
-                System.err.println("2D Demo Failed: Could not read initial image file.");
+                System.err.println("2D Demo Failed: Could not read initial image file."); //
             }
         });
     }
@@ -31,15 +31,22 @@ public class Example {
     public static void restart1DDemoWithData(double[] signalData) {
         if (signalData == null) return;
         
-        System.out.println("--- Starting/Restarting 1D Demo ---");
-        FourierModel1D model1D = new FourierModel1D(signalData);
-        FourierView1D view1D = new FourierView1D(model1D);
-        FourierController1D controller1D = new FourierController1D(model1D);
+        System.out.println("--- Starting/Restarting 1D Demo ---"); //
+        FourierModel1D model1D = new FourierModel1D(signalData); //
+        FourierView1D view1D = new FourierView1D(model1D); //
+        
+        // --- コントローラの登録 ---
 
-        // "User Modified Power Spectrum" パネルにリスナーを登録
-        view1D.addMouseListenerToPanel("User Modified Power Spectrum", controller1D);
-        view1D.addMouseMotionListenerToPanel("User Modified Power Spectrum", controller1D);
-        System.out.println("1D Demo Window Initialized.");
+        // 1. スペクトル計算用コントローラを特定のパネルに登録 (既存のコード)
+        FourierController1D controller1D = new FourierController1D(model1D); //
+        view1D.addMouseListenerToPanel("User Modified Power Spectrum", controller1D); //
+        view1D.addMouseMotionListenerToPanel("User Modified Power Spectrum", controller1D); //
+
+        // 2.【新規追加】メニュー表示用コントローラを生成し、全てのパネルに登録
+        MenuController menuController1D = new MenuController(model1D);
+        view1D.addMouseListenerToAllPanels(menuController1D);
+        
+        System.out.println("1D Demo Window Initialized."); //
     }
 
     /**
@@ -49,27 +56,21 @@ public class Example {
     public static void restart2DDemoWithData(double[][][] colorImageData) {
         if (colorImageData == null) return;
 
-        System.out.println("\n--- Starting/Restarting 2D Demo ---");
-        // カラー画像をグレースケールに変換
-        int height = colorImageData[0].length;
-        int width = colorImageData.length;
-        double[][] grayScaleData = new double[height][width];
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                double r = colorImageData[x][y][0];
-                double g = colorImageData[x][y][1];
-                double b = colorImageData[x][y][2];
-                grayScaleData[y][x] = 0.299 * r + 0.587 * g + 0.114 * b;
-            }
-        }
+        System.out.println("\n--- Starting/Restarting 2D Demo ---"); //
+        FourierModel2D model2D = new FourierModel2D(colorImageData); //
+        FourierView2D view2D = new FourierView2D(model2D); //
         
-        FourierModel2D model2D = new FourierModel2D(colorImageData);
-        FourierView2D view2D = new FourierView2D(model2D);
-        FourierController2D controller2D = new FourierController2D(model2D);
+        // --- コントローラの登録 ---
+
+        // 1. スペクトル計算用コントローラを特定のパネルに登録 (既存のコード)
+        FourierController2D controller2D = new FourierController2D(model2D); //
+        view2D.addMouseListenerToPanel("User Modified Power Spectrum (Log Scale)", controller2D); //
+        view2D.addMouseMotionListenerToPanel("User Modified Power Spectrum (Log Scale)", controller2D); //
         
-        // "User Modified Power Spectrum (Log Scale)" パネルにリスナーを登録
-        view2D.addMouseListenerToPanel("User Modified Power Spectrum (Log Scale)", controller2D);
-        view2D.addMouseMotionListenerToPanel("User Modified Power Spectrum (Log Scale)", controller2D);
-        System.out.println("2D Demo Window Initialized.");
+        // 2.【新規追加】メニュー表示用コントローラを生成し、全てのパネルに登録
+        MenuController menuController2D = new MenuController(model2D);
+        view2D.addMouseListenerToAllPanels(menuController2D);
+        
+        System.out.println("2D Demo Window Initialized."); //
     }
 }
