@@ -1,154 +1,132 @@
-package Fourier; // Fourierパッケージに属するMenuクラスを定義
+package Fourier;
 
-import Fourier.controller.FourierController; // FourierControllerクラスをインポート
-import javax.swing.*; // GUI部品を使えるようにする
-import java.awt.*; // グラフィックやイベントを扱えるようにする
-import java.util.stream.Stream; // Streamを使えるようにする
+import Fourier.model.FourierModel;
+import Fourier.model.FourierModel1D;
+import Fourier.model.FourierModel2D;
+import Fourier.example.Example;
 
+import javax.swing.*;
+import java.awt.*;
+
+/**
+ * アプリケーションの右クリックメニュー機能を提供するクラス。
+ * ファイルの読み込みや、計算結果の保存を行います。
+ */
 public class Menu {
-    private static JFrame frame; // JFrameを使ってウィンドウを作成
+
+    private final FourierModel model;
+
+    public Menu(FourierModel model) {
+        this.model = model;
+    }
 
     /**
-     * メニューを表示するためのメソッドを呼び出す
-     * このメソッドは、マウスカーソルの位置にポップアップメニューを表示し、
-     * 「1dData Entry」、「2dData Entry」や「data Storage」などのメニュー項目を提供する。
-     * 各メニュー項目は、クリックされたときに特定のアクションを実行する。
-     * 例えば、「data Entry」をクリックすると、FourierController.In1dDataの値が反転し、
-     * 現在の値がコンソールに表示される。また、callFileIOメソッドが呼び出され、
-     * データの読み込みが行われる。
+     * 指定されたコンポーネント上の特定の位置にポップアップメニューを表示します。
+     * @param invoker メニューを表示する親コンポーネント
+     * @param x 表示するx座標
+     * @param y 表示するy座標
      */
-
-    public void displayMenuScreen() {
-        // 現在のマウスカーソルの位置を取得する
-        Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
-
-        // メニューを作成
+    public void displayMenuScreen(Component invoker, int x, int y) {
         JPopupMenu popupMenu = new JPopupMenu();
 
-        // 「1dData Entry」メニュー項目
-        JMenuItem entry1dData = new JMenuItem("1dData Entry");
-        // クリックされたときIn1dDataの値を反転
-        entry1dData.addActionListener(e -> {
-            FourierController.In1dData = !FourierController.In1dData; // 反転させる
-            System.out.println("In1dData toggled: " + FourierController.In1dData); // 現在の値を表示
-            callFileIO(); // callFileIOメソッドを呼び出す
-        });
-        // ポップアップメニューにこの項目を追加
-        popupMenu.add(entry1dData);
+        // --- ファイルを開くメニュー ---
+        JMenuItem openFileItem = new JMenuItem("Open File..."); //
+        openFileItem.addActionListener(e -> handleOpenFile(invoker)); //
+        popupMenu.add(openFileItem); //
 
-        // 「2dData Entry」メニュー項目
-        JMenuItem entry2dData = new JMenuItem("2dData Entry");
-        // クリックされたときIn2dDataの値を反転
-        entry1dData.addActionListener(e -> {
-            FourierController.In2dData = !FourierController.In2dData; // 反転させる
-            System.out.println("In2dData toggled: " + FourierController.In2dData); // 現在の値を表示
-            callFileIO(); // callFileIOメソッドを呼び出す
-        });
-        // ポップアップメニューにこの項目を追加
-        popupMenu.add(entry2dData);
+        // --- 保存メニュー ---
+        JMenuItem saveFileItem = new JMenuItem("Save Reconstructed Data As...");
+        saveFileItem.addActionListener(e -> handleSave(invoker));
 
-        // 「Data Storage」メニュー項目
-        JMenuItem storageData = new JMenuItem("data Storage");
-        // クリックされたときKeepdataの値を反転
-        storageData.addActionListener(e -> {
-            FourierController.Keepdata = !FourierController.Keepdata; // 反転させる
-            System.out.println("Keepdata toggled: " + FourierController.Keepdata); // 現在の値を表示
-            callFileIO(); // callFileIOメソッドを呼び出す
-        });
-        // ポップアップメニューにこの項目を追加
-        popupMenu.add(storageData);
+        // モデルの種類に応じて、保存可能なデータがあるかチェックし、なければ無効化
+        if (model instanceof FourierModel1D) {
+            saveFileItem.setEnabled(((FourierModel1D) model).getIfftResultData() != null);
+        } else if (model instanceof FourierModel2D) {
+            saveFileItem.setEnabled(((FourierModel2D) model).getIfftResultColorData() != null);
+        } else {
+            saveFileItem.setEnabled(false);
+        }
+        popupMenu.add(saveFileItem);
 
-        // //「Spectrum Reset」メニュー項目
-        // JMenuItem resetSpectrum = new JMenuItem("Spectrum Reset");
-        // // クリックされたときRespectrumの値を反転
-        // resetSpectrum.addActionListener(e -> {
-        // FourierController.Respectrum = !FourierController.Respectrum; // 反転させる
-        // System.out.println("Respectrum toggled: " + FourierController.Respectrum); //
-        // 現在の値を表示
-        // callFileIO(); // callFileIOメソッドを呼び出す
-        // });
-        // // ポップアップメニューにこの項目を追加
-        // popupMenu.add(resetSpectrum);
-
-        // メニューを表示するためのウィンドウを用意
-        frame.setUndecorated(true); // タイトルバーや閉じるボタンなどを非表示にする
-        frame.setSize(0, 0); // ウィンドウ自体は最小に設定
-        frame.setLocation(mouseLocation); // ウィンドウをマウス位置に移動
-        frame.setVisible(true); // ウィンドウを表示
-
-        // メニューを表示
-        SwingUtilities.invokeLater(() -> {
-            // フレーム上の (0,0) の位置にメニューを表示
-            popupMenu.show(frame, 0, 0);
-        });
+        popupMenu.show(invoker, x, y); //
     }
 
     /**
-     * ファイル入出力を呼び出すメソッド
-     * このメソッドは、FourierControllerのIn1dDataとKeepdataの値に基づいて、
-     * 入力データの読み込みを行う。
-     * In1dDataがtrueかつ入力されたデータが1次元の場合、readSignalFromCSVメソッドを呼び出して1次元の入力信号を読み込む。
-     * In1dDataがtrueかつ入力されたデータが2次元の場合、readSignalFromImageメソッドを呼び出して2次元の入力信号を読み込む。
-     * Keepdataがtrueかつ保存するデータが1次元の場合、writeSignalToCSVメソッドを呼び出して1次元の信号データを保存する。
-     * Keepdataがtrueかつ保存するデータが2次元の場合、writeSignalToImageメソッドを呼び出して2次元の信号データを保存する。
-     * このメソッドは、ストリームを使用して条件に合致する場合のみ処理を実行する。
+     * ファイルを開く処理を実行します。
+     * 選択されたファイルに応じて、1Dまたは2Dのデモを再起動します。
+     * @param parent ダイアログの親コンポーネント
      */
+    private void handleOpenFile(Component parent) {
+        String path = getOpenFilePath(parent); //
+        if (path == null) return; //
 
-    public void callFileIO() {
-        Stream.of(FourierController.In1dData) // In1dDataがtrueまたはfalse
-                .filter(aBoolean -> aBoolean) // trueのときだけ通す
-                .forEach(aBoolean -> FileIO.readSignalFromCSV(getOpenFilePath())); // readSignalFromCSVを実行
-
-        Stream.of(FourierController.In2dData) // In2dDataがtrueまたはfalse
-                .filter(aBoolean -> aBoolean) // trueのときだけ通す
-                .forEach(aBoolean -> FileIO.readSignalFromImage(getOpenFilePath())); // readSignalFromImageを実行
-
-        Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
-                .filter(aBoolean -> aBoolean && FourierController.Dimensional == 0) // trueかつデータが1次元のときだけ通す
-                .forEach(aBoolean -> {
-                    // FileIO.writeSignalToCSV(getSaveFilePath());
-                }); // writeSignalToCSVを実行
-
-        Stream.of(FourierController.Keepdata) // Keepdataがtrueまたはfalse
-                .filter(aBoolean -> aBoolean && FourierController.Dimensional == 1) // trueかつデータが2次元のときだけ通す
-                .forEach(aBoolean -> {
-                    // FileIO.writeSignalToImage(getSaveFilePath());
-                }); // writeSignalToImageを実行
+        if (model instanceof FourierModel1D) { //
+            double[] data = FileIO.readSignalFromCSV(path); //
+            if (data != null) { //
+                // Exampleクラスに新しいデータで1Dデモを再起動するように依頼
+                Example.restart1DDemoWithData(data); //
+                // 現在のウィンドウを閉じる
+                SwingUtilities.getWindowAncestor(parent).dispose(); //
+            }
+        } else if (model instanceof FourierModel2D) { //
+            double[][][] colorData = FileIO.readSignalFromImage(path); //
+            if (colorData != null) { //
+                // Exampleクラスの再起動メソッドを呼び出す
+                Example.restart2DDemoWithData(colorData); //
+                // 現在のウィンドウを閉じる
+                SwingUtilities.getWindowAncestor(parent).dispose(); //
+            }
+        }
     }
 
     /**
-     * ファイル選択ダイアログを表示し、ユーザが選択したファイルのパスを取得するメソッド
-     * このメソッドは、JFileChooserを使用してファイル選択ダイアログを表示し、
-     * ユーザが選択したファイルのパスを返す。
-     * ユーザがファイルを選択しなかった場合はnullを返す。
+     * 再構成されたデータをファイルに保存する処理を実行します。
+     * @param parent ダイアログの親コンポーネント
      */
+    private void handleSave(Component parent) {
+        String path = getSaveFilePath(parent);
+        if (path == null) return;
 
-    public static String getOpenFilePath() {
-        JFileChooser openfileChooser = new JFileChooser(); // ファイル選択ダイアログを作成
-        int decide = openfileChooser.showOpenDialog(frame); // ダイアログを表示し、ユーザの選択を待つ
-
-        return Stream.of(decide)
-                .filter(d -> d == JFileChooser.APPROVE_OPTION) // ユーザがファイルを選択した場合のみ通す
-                .map(d -> openfileChooser.getSelectedFile().getAbsolutePath()) // 選択されたファイルのパスを取得
-                .findFirst() // 最初の要素を取得
-                .orElse(null); // ファイルが選択されなかった場合はnullを返す
+        if (model instanceof FourierModel1D) {
+            double[] signal = ((FourierModel1D) model).getIfftResultData();
+            if (signal != null) {
+                FileIO.writeSignalToCSV(signal, path);
+            }
+        } else if (model instanceof FourierModel2D) {
+            // *************** ここから修正 ***************
+            // Modelから再構成されたカラー画像(IFFT結果)を直接取得
+            double[][][] colorData = ((FourierModel2D) model).getIfftResultColorData();
+            if (colorData != null) {
+                // 変換は不要。そのまま保存メソッドに渡す
+                FileIO.writeSignalToImage(colorData, path);
+            }
+            // *************** ここまで修正 ***************
+        }
     }
 
     /**
-     * ファイル保存ダイアログを表示し、ユーザが保存するファイルのパスを取得するメソッド
-     * このメソッドは、JFileChooserを使用してファイル保存ダイアログを表示し、
-     * ユーザが保存するファイルのパスを返す。
-     * ユーザがファイルを保存しなかった場合はnullを返す。
+     * ファイル選択ダイアログを表示し、選択されたファイルのパスを取得します。
+     * @param parent 親コンポーネント
+     * @return ファイルパス。選択されなかった場合はnull。
      */
+    public static String getOpenFilePath(Component parent) {
+        JFileChooser chooser = new JFileChooser(); //
+        if (chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) { //
+            return chooser.getSelectedFile().getAbsolutePath(); //
+        }
+        return null; //
+    }
 
-    public static String getSaveFilePath() {
-        JFileChooser savefileChooser = new JFileChooser(); // ファイル保存ダイアログを作成
-        int decide = savefileChooser.showSaveDialog(frame); // ダイアログを表示し、ユーザの選択を待つ
-
-        return Stream.of(decide)
-                .filter(d -> d == JFileChooser.APPROVE_OPTION) // ユーザがファイルを選択した場合のみ通す
-                .map(d -> savefileChooser.getSelectedFile().getAbsolutePath()) // 選択されたファイルのパスを取得
-                .findFirst() // 最初の要素を取得
-                .orElse(null); // ファイルが選択されなかった場合はnullを返す
+    /**
+     * ファイル保存ダイアログを表示し、保存するファイルのパスを取得します。
+     * @param parent 親コンポーネント
+     * @return ファイルパス。選択されなかった場合はnull。
+     */
+    public static String getSaveFilePath(Component parent) {
+        JFileChooser chooser = new JFileChooser(); //
+        if (chooser.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) { //
+            return chooser.getSelectedFile().getAbsolutePath(); //
+        }
+        return null; //
     }
 }

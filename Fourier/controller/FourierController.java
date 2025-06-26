@@ -1,46 +1,58 @@
 package Fourier.controller;
 
-import Fourier.view.FourierView;
-import java.awt.Cursor;
-import java.awt.Component;
-import java.awt.Point;
+import Fourier.model.FourierModel;
+import Fourier.Menu;
 import java.awt.event.MouseEvent;
 import javax.swing.event.MouseInputAdapter;
-import Fourier.Menu;
 
-public class FourierController extends MouseInputAdapter {
-	Menu menu = new Menu();
-	public static boolean Keepdata = false; // データを保存するのを制御するための変数
-	public static boolean In1dData = false; // データを入力するのを制御するための変数
-	public static boolean In2dData = false; // データを入力するのを制御するための変数
-	public static Integer Dimensional = 0; // 次元数を制御するための変数
-	public static boolean Respectrum = false; // スペクトルの削除を制御をするための変数
-	private boolean leftPressed = false;
+/**
+ * マウス入力をモデルに伝え、右クリックでメニューを表示する責務を持つ
+ * コントローラの抽象親クラス。
+ */
+public abstract class FourierController extends MouseInputAdapter {
 
-	public void mouseReleased(MouseEvent sensing) {
-		leftPressed = false;
-	}
+    // モデルとメニューへの参照は protected とし、サブクラスからアクセス可能にする
+    protected final FourierModel model;
+    protected final Menu menu;
 
-	public void mouseClicked(MouseEvent sensing) {
-		if (sensing.getButton() == MouseEvent.BUTTON3) {
-			menu.displayMenuScreen();
-		}
-	}
+    /**
+     * コンストラクタ。
+     * @param model このコントローラが操作するモデル
+     */
+    public FourierController(FourierModel model) {
+        this.model = model;
+        this.menu = new Menu(model); // MenuにModelを渡して生成
+    }
 
-	public void mouseEntered(MouseEvent sensing) {
-	}
+    /**
+     * マウスがクリックされた時の処理。
+     * 右クリックの場合はメニューを表示し、それ以外の場合はモデルの計算をトリガーする。
+     */
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON3) {
+            menu.displayMenuScreen(e.getComponent(), e.getX(), e.getY());
+        } else {
+            // 左クリックでもスペクトルを更新
+            model.computeFromMousePoint(e.getPoint(), e.isAltDown());
+        }
+    }
 
-	public void mousePressed(MouseEvent sensing) {
-	}
+    /**
+     * マウスボタンが押された時の処理。
+     * モデルの計算をトリガーする。
+     */
+    @Override
+    public void mousePressed(MouseEvent e) {
+        model.computeFromMousePoint(e.getPoint(), e.isAltDown());
+    }
 
-	public void mouseDragged(MouseEvent sensing) {
-		if (leftPressed) {
-			Cursor cursor = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
-			Component component = (Component) sensing.getSource();
-			component.setCursor(cursor);
-		}
-	}
-
-	public void mouseMoved(MouseEvent sensing) {
-	}
+    /**
+     * マウスがドラッグされた時の処理。
+     * モデルの計算を連続してトリガーする。
+     */
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        model.computeFromMousePoint(e.getPoint(), e.isAltDown());
+    }
 }

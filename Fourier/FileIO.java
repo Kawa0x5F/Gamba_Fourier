@@ -1,106 +1,69 @@
 package Fourier;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*; // File, FileReader, BufferedReaderなどをインポート
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 
-import Fourier.model.FourierModel1D;
-
 public class FileIO {
-
     /**
-     * 離散フーリエ1次元変換のための元データ(自分で用意した信号(ファイル形式はCSV予定))。
-     * @param resourcePath クラスパスからのリソースの絶対パス (例: "/my_signal.csv")
+     * CSVファイルから1次元信号を読み込みます。
+     * @param filePath 読み込むCSVファイルの絶対パス
      */
-    public static double[] readSignalFromCSV (String resourcePath) { // 引数名を変更して意図を明確化
+    public static double[] readSignalFromCSV(String filePath) {
         List<Double> signalList = new ArrayList<>();
-
-        // InputStreamを取得
-        InputStream is = FileIO.class.getResourceAsStream(resourcePath);
-        if (is == null) {
-            System.err.println("リソースが見つかりません: " + resourcePath);
-            return new double[0];
-        }
-
-        // InputStreamをBufferedReaderで読み込む
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath, StandardCharsets.UTF_8))) {
             String line;
-
             while ((line = br.readLine()) != null) {
-                line = line.trim();
-                if (!line.isEmpty()) {
-                    signalList.add(Double.parseDouble(line));
+                if (!line.trim().isEmpty()) {
+                    signalList.add(Double.parseDouble(line.trim()));
                 }
             }
-            
         } catch (IOException | NumberFormatException e) {
-                e.printStackTrace();
-                return new double[0];
+            e.printStackTrace();
+            return null; // エラー時はnullを返す
         }
-
-        // Listからdouble[]へ変換
-        double[] result = new double[signalList.size()];
-        for (int i = 0; i < signalList.size(); i++) {
-            result[i] = signalList.get(i);
-        }   
-
-        return result;
+        return signalList.stream().mapToDouble(Double::doubleValue).toArray();
     }
-    
 
     /**
-     * 離散フーリエ2次元変換のための元データ
-     * @param resourcePath クラスパスからのリソースの絶対パス
+     * 画像ファイルから2次元信号(RGB)を読み込みます。
+     * @param filePath 読み込む画像ファイルの絶対パス
      */
-    public static double[][][] readSignalFromImage (String resourcePath) {
-        try (InputStream is = FileIO.class.getResourceAsStream(resourcePath)) {
+    public static double[][][] readSignalFromImage(String filePath) {
+        try (InputStream is = FileIO.class.getResourceAsStream(filePath)) {
             if (is == null) {
-                System.err.println("リソースが見つかりません: " + resourcePath); 
+                System.err.println("リソースが見つかりません: " + filePath);
+                System.err.println("プロジェクトの 'resources' フォルダなどに画像ファイルが正しく配置されているか確認してください。");
                 return null;
             }
 
             BufferedImage image = ImageIO.read(is);
             if (image == null) {
-                System.err.println("画像の読み込みに失敗しました(サポートされていない形式の可能性があります): " + resourcePath);
+                System.err.println("画像の読み込みに失敗しました(サポートされていない形式の可能性があります): " + filePath);
                 return null;
             }
-
             int width = image.getWidth();
             int height = image.getHeight();
-
             double[][][] result = new double[width][height][3];
-
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
                     int rgb = image.getRGB(x, y);
-                    int r = (rgb >> 16) & 0xFF;
-                    int g = (rgb >> 8) & 0xFF;
-                    int b = rgb & 0xFF;
-
-                    result[x][y][0] = (double) r;
-                    result[x][y][1] = (double) g;
-                    result[x][y][2] = (double) b;
+                    result[x][y][0] = (double) ((rgb >> 16) & 0xFF);
+                    result[x][y][1] = (double) ((rgb >> 8) & 0xFF);
+                    result[x][y][2] = (double) (rgb & 0xFF);
                 }
             }
             return result;
-            
         } catch (IOException e) {
-            System.err.println("画像の読み込み中にエラーが発生しました: " + e.getMessage()); 
             e.printStackTrace();
             return null;
         }
     }
-     /**
+
+    /**
      * 1次元データを保存
      */
     public static void writeSignalToCSV (double[] signalData, String filePath) { //ファイルの保存先の指定はメニューが行う予定
@@ -167,4 +130,3 @@ public class FileIO {
     
 }    
     
-
