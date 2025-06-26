@@ -1,136 +1,174 @@
 package Fourier.view;
 
 import Fourier.model.FourierModel2D;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+/**
+ * 2Dフーリエ変換のビュークラス。
+ * すべてのパネル表示を3チャンネルのカラー画像を基準に行うように修正されています。
+ */
 public class FourierView2D extends FourierView implements PropertyChangeListener {
 
-    // 各パネルを識別するためのキーとタイトル
+    // 各パネルを識別するためのキー
     private static final String KEY_ORIGINAL_IMAGE = "Original Image";
     private static final String KEY_ORIGINAL_SPECTRUM = "Original Power Spectrum (Log Scale)";
     private static final String KEY_RECONSTRUCTED_IMAGE = "Reconstructed Image";
     private static final String KEY_MODIFIED_SPECTRUM = "User Modified Power Spectrum (Log Scale)";
 
-    // Modelでも参照されるためpublic static
     public static final int PANEL_WIDTH = 400;
     public static final int PANEL_HEIGHT = 400;
 
     public FourierView2D(FourierModel2D model) {
         super(model, "2D Fourier Transform - Spectrum Manipulation");
+        frame.setSize(850, 850);
+        frame.setLayout(new GridLayout(2, 2, 5, 5));
 
-        frame.setSize(850, 850); // 画面サイズを調整
-        frame.setLayout(new GridLayout(2, 2, 5, 5)); // 2x2グリッド
-
-        // パネルの追加とタイトル設定
-        // パワースペクトル表示用のパネルは対数スケール表示を有効にする
-        addPanel(KEY_ORIGINAL_IMAGE, new ImagePanel(KEY_ORIGINAL_IMAGE, false)); // 左上: 元の画像
-        addPanel(KEY_ORIGINAL_SPECTRUM, new ImagePanel(KEY_ORIGINAL_SPECTRUM, true)); // 右上: 元のパワースペクトル
-        addPanel(KEY_RECONSTRUCTED_IMAGE, new ImagePanel(KEY_RECONSTRUCTED_IMAGE, false)); // 左下: IFFT再構成画像
-        
-        // 右下のパネルはマウス情報を表示できるInfoImagePanelを使用
-        addPanel(KEY_MODIFIED_SPECTRUM, new InfoImagePanel(KEY_MODIFIED_SPECTRUM, true));
+        // パネルを生成し、フレームに追加（ご依頼の通り順序を変更）
+        // 左上: 元画像
+        addPanel(KEY_ORIGINAL_IMAGE, new ImagePanel(KEY_ORIGINAL_IMAGE));
+        // 右上: 元のパワースペクトル
+        addPanel(KEY_ORIGINAL_SPECTRUM, new ImagePanel(KEY_ORIGINAL_SPECTRUM));
+        // 左下: 再構成画像
+        addPanel(KEY_RECONSTRUCTED_IMAGE, new ImagePanel(KEY_RECONSTRUCTED_IMAGE));
+        // 右下: ユーザーが変更したパワースペクトル
+        addPanel(KEY_MODIFIED_SPECTRUM, new InfoImagePanel(KEY_MODIFIED_SPECTRUM));
 
         model.addPropertyChangeListener(this);
-        updateView(); // 初回表示の更新
+        updateView();
         setVisible(true);
     }
 
+    /**
+     * モデルの変更を検知し、ビュー（各パネル）を更新します。
+     * パネルの配置変更に合わせて更新ロジックを修正しました。
+     */
     @Override
     protected void updateView() {
         FourierModel2D model2D = (FourierModel2D) getModel();
 
-        // 1. 元の画像 (initialOriginData) - 左上
-        ((ImagePanel) panels.get(KEY_ORIGINAL_IMAGE)).setData(model2D.getInitialOriginData());
+        // 左上のパネル: 元の画像 (カラー)
+        ((ImagePanel) panels.get(KEY_ORIGINAL_IMAGE)).setData(model2D.getInitialOriginColorData());
 
-        // 2. 元のパワースペクトル - 右上
-        // このゲッターはModel側で追加実装されていることを想定
-        // ((ImagePanel) panels.get(KEY_ORIGINAL_SPECTRUM)).setData(model2D.getInitialPowerSpectrumData());
+        // 右上のパネル: 元のパワースペクトル (グレースケール -> カラー変換)
+        double[][] initialSpectrumData = model2D.getInitialPowerSpectrumData();
+        double[][][] initialSpectrumAsColor = convertGrayDataToColorData(initialSpectrumData, true);
+        ((ImagePanel) panels.get(KEY_ORIGINAL_SPECTRUM)).setData(initialSpectrumAsColor);
 
-        // 3. IFFTで再構成された画像 (ifftResultData) - 左下
-        ((ImagePanel) panels.get(KEY_RECONSTRUCTED_IMAGE)).setData(model2D.getIfftResultData());
+        // 左下のパネル: IFFTで再構成された画像 (カラー)
+        ((ImagePanel) panels.get(KEY_RECONSTRUCTED_IMAGE)).setData(model2D.getIfftResultColorData());
 
-        // 4. ユーザー操作によって再計算されたパワースペクトル (recalculatedPowerSpectrumData) - 右下
-        ((ImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setData(model2D.getRecalculatedPowerSpectrumData());
+        // 右下のパネル: ユーザー操作によって再計算されたパワースペクトル (グレースケール -> カラー変換)
+        double[][] modifiedSpectrumData = model2D.getRecalculatedPowerSpectrumData();
+        double[][][] modifiedSpectrumAsColor = convertGrayDataToColorData(modifiedSpectrumData, true);
+        ((ImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setData(modifiedSpectrumAsColor);
+    }
+    
+    /**
+     * 単一チャンネルのグレースケールデータを、3チャンネルのカラーデータに変換します。
+     * スペクトル表示のために使用します。
+     * @param grayData 変換元のグレースケールデータ (double[][])
+     * @param useLogScale 対数スケールを適用するかどうか
+     * @return 変換後のカラーデータ (double[][][])
+     */
+    private double[][][] convertGrayDataToColorData(double[][] grayData, boolean useLogScale) {
+        if (grayData == null || grayData.length == 0) return null;
+
+        int height = grayData.length;
+        int width = grayData[0].length;
+        double[][][] colorData = new double[width][height][3];
+
+        double max = Double.MIN_VALUE;
+        double min = Double.MAX_VALUE;
+
+        // データの最大値・最小値を探す
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                double val = useLogScale ? Math.log1p(grayData[y][x]) : grayData[y][x];
+                if (val > max) max = val;
+                if (val < min) min = val;
+            }
+        }
+
+        double range = max - min;
+        if (range == 0) range = 1;
+
+        // データを0-255の輝度値に正規化し、RGB全チャンネルに同じ値を設定
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                double val = useLogScale ? Math.log1p(grayData[y][x]) : grayData[y][x];
+                double normalizedValue = 255 * (val - min) / range;
+                colorData[x][y][0] = normalizedValue; // R
+                colorData[x][y][1] = normalizedValue; // G
+                colorData[x][y][2] = normalizedValue; // B
+            }
+        }
+        return colorData;
     }
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
 
-        // データが更新されたら、関連するパネルを含むビュー全体を更新
         switch (propertyName) {
             case "userModifiedSpectrumData":
             case "recalculatedPowerSpectrumData":
             case "ifftResultData":
-            // case "initialPowerSpectrumData": // 初期データ更新時
                 updateView();
                 break;
             
-            // 計算情報パネルのみの更新
             case "calculationPoint":
             case "altKeyState":
                 FourierModel2D model2D = (FourierModel2D) getModel();
-                Point calcPoint = model2D.getLastCalculationPoint();
-                boolean altDown = model2D.getIsAltDown();
-
                 if (panels.get(KEY_MODIFIED_SPECTRUM) instanceof InfoImagePanel) {
-                    ((InfoImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setCalculationInfo(calcPoint, altDown);
+                    ((InfoImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setCalculationInfo(
+                        model2D.getLastCalculationPoint(),
+                        model2D.getIsAltDown()
+                    );
                 }
                 break;
         }
     }
 
-    // 2次元データをグレースケール画像として表示するパネル
+    /**
+     * 3チャンネルのカラーデータを画像として表示するパネル。
+     * グレースケール専用の処理は削除されています。
+     */
     protected class ImagePanel extends SignalPanel {
         private BufferedImage image;
-        private final boolean useLogScale;
 
-        public ImagePanel(String title, boolean useLogScale) {
+        public ImagePanel(String title) {
             super(title);
-            this.useLogScale = useLogScale;
             this.setPreferredSize(new Dimension(PANEL_WIDTH, PANEL_HEIGHT));
         }
 
-        public void setData(double[][] data) {
-            if (data == null || data.length == 0 || data[0].length == 0) {
-                this.image = null;
-            } else {
-                this.image = convertToImage(data);
-            }
+        /**
+         * カラーデータを設定し、パネルを再描画します。
+         * @param colorData [width][height][channel] のデータ (0:R, 1:G, 2:B)
+         */
+        public void setData(double[][][] colorData) {
+            this.image = (colorData == null) ? null : convertToImage(colorData);
             repaint();
         }
 
-        private BufferedImage convertToImage(double[][] data) {
-            int width = data[0].length;
-            int height = data.length;
-            BufferedImage newImage = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+        /**
+         * カラーデータ(double[][][])をBufferedImageに変換します。
+         */
+        private BufferedImage convertToImage(double[][][] data) {
+            int width = data.length;
+            int height = data[0].length;
+            BufferedImage newImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-            double max = Double.MIN_VALUE;
-            double min = Double.MAX_VALUE;
-
-            // データの最大値・最小値を探す
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
-                    double val = useLogScale ? Math.log1p(data[y][x]) : data[y][x];
-                    if (val > max) max = val;
-                    if (val < min) min = val;
-                }
-            }
-
-            double range = max - min;
-            if (range == 0) range = 1; // 全て同じ値の場合のゼロ除算を防止
-
-            // データを0-255の輝度値に正規化して画像にセット
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    double val = useLogScale ? Math.log1p(data[y][x]) : data[y][x];
-                    int gray = (int) (255 * (val - min) / range);
-                    int rgb = (gray << 16) | (gray << 8) | gray;
+                    // 各チャンネルの値を0-255の範囲にクリップしてピクセル値を生成
+                    int r = (int) Math.max(0, Math.min(255, data[x][y][0]));
+                    int g = (int) Math.max(0, Math.min(255, data[x][y][1]));
+                    int b = (int) Math.max(0, Math.min(255, data[x][y][2]));
+                    int rgb = (r << 16) | (g << 8) | b;
                     newImage.setRGB(x, y, rgb);
                 }
             }
@@ -139,21 +177,22 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
 
         @Override
         protected void paintComponent(Graphics g) {
-            super.paintComponent(g); // 親クラスの描画（タイトルなど）
+            super.paintComponent(g);
             if (image != null) {
-                // パネルサイズに合わせて画像を描画
                 g.drawImage(image, 0, 0, this.getWidth(), this.getHeight(), null);
             }
         }
     }
 
-    // マウス情報を表示する機能を追加したImagePanel
+    /**
+     * マウス情報を表示する機能を追加したImagePanel。
+     */
     private class InfoImagePanel extends ImagePanel {
         private Point calculationPoint;
         private boolean altPressed;
 
-        public InfoImagePanel(String title, boolean useLogScale) {
-            super(title, useLogScale);
+        public InfoImagePanel(String title) {
+            super(title);
         }
 
         public void setCalculationInfo(Point point, boolean alt) {
@@ -164,13 +203,12 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
 
         @Override
         protected void paintComponent(Graphics g) {
-            super.paintComponent(g); // ImagePanelの描画処理を呼び出す
+            super.paintComponent(g);
             if (calculationPoint != null) {
                 g.setColor(Color.RED);
                 g.setFont(new Font("Monospaced", Font.BOLD, 14));
                 String info = String.format("Last Click: (%d, %d)", calculationPoint.x, calculationPoint.y);
                 g.drawString(info, 10, getHeight() - 25);
-
                 String altInfo = String.format("Alt Key: %s", altPressed ? "ON" : "OFF");
                 g.drawString(altInfo, 10, getHeight() - 10);
             }

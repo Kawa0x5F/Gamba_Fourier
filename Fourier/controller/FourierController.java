@@ -1,46 +1,61 @@
+// FourierController.java の修正版
+
 package Fourier.controller;
 
-import Fourier.view.FourierView;
-import java.awt.Cursor;
-import java.awt.Component;
-import java.awt.Point;
+import Fourier.model.FourierModel;
 import java.awt.event.MouseEvent;
 import javax.swing.event.MouseInputAdapter;
-import Fourier.Menu;
+import javax.swing.SwingUtilities; // SwingUtilitiesをインポート
 
-public class FourierController extends MouseInputAdapter {
-	Menu menu = new Menu();
-	public static boolean Keepdata = false; // データを保存するのを制御するための変数
-	public static boolean In1dData = false; // データを入力するのを制御するための変数
-	public static boolean In2dData = false; // データを入力するのを制御するための変数
-	public static Integer Dimensional = 0; // 次元数を制御するための変数
-	public static boolean Respectrum = false; // スペクトルの削除を制御をするための変数
-	private boolean leftPressed = false;
+/**
+ * マウスの左クリックとドラッグ入力をモデルに伝え、スペクトル計算をトリガーする責務を持つ
+ * コントローラの抽象親クラス。（右クリック処理を分離）
+ */
+public abstract class FourierController extends MouseInputAdapter {
 
-	public void mouseReleased(MouseEvent sensing) {
-		leftPressed = false;
-	}
+    protected final FourierModel model;
+    // Menuへの参照は不要になるため削除
+    // protected final Menu menu;
 
-	public void mouseClicked(MouseEvent sensing) {
-		if (sensing.getButton() == MouseEvent.BUTTON3) {
-			menu.displayMenuScreen();
-		}
-	}
+    /**
+     * コンストラクタ。
+     * @param model このコントローラが操作するモデル
+     */
+    public FourierController(FourierModel model) {
+        this.model = model;
+        // Menuのインスタンス化を削除
+    }
 
-	public void mouseEntered(MouseEvent sensing) {
-	}
+    /**
+     * マウスがクリックされた時の処理。
+     * 右クリックでない場合（主に左クリック）にモデルの計算をトリガーする。
+     */
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (!SwingUtilities.isRightMouseButton(e)) {
+            model.computeFromMousePoint(e.getPoint(), e.isAltDown());
+        }
+    }
 
-	public void mousePressed(MouseEvent sensing) {
-	}
+    /**
+     * マウスボタンが押された時の処理。
+     * 右クリックでない場合にモデルの計算をトリガーする。
+     */
+    @Override
+    public void mousePressed(MouseEvent e) {
+        if (!SwingUtilities.isRightMouseButton(e)) {
+            model.computeFromMousePoint(e.getPoint(), e.isAltDown());
+        }
+    }
 
-	public void mouseDragged(MouseEvent sensing) {
-		if (leftPressed) {
-			Cursor cursor = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
-			Component component = (Component) sensing.getSource();
-			component.setCursor(cursor);
-		}
-	}
-
-	public void mouseMoved(MouseEvent sensing) {
-	}
+    /**
+     * マウスがドラッグされた時の処理。
+     * 右ドラッグでない場合にモデルの計算を連続してトリガーする。
+     */
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        if (!SwingUtilities.isRightMouseButton(e)) {
+            model.computeFromMousePoint(e.getPoint(), e.isAltDown());
+        }
+    }
 }
