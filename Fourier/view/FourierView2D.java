@@ -13,49 +13,58 @@ import java.beans.PropertyChangeListener;
  */
 public class FourierView2D extends FourierView implements PropertyChangeListener {
 
-    // 各パネルを識別するためのキー (変更なし)
+    // 各パネルを識別するためのキー
     private static final String KEY_ORIGINAL_IMAGE = "Original Image";
     private static final String KEY_ORIGINAL_SPECTRUM = "Original Power Spectrum (Log Scale)";
     private static final String KEY_RECONSTRUCTED_IMAGE = "Reconstructed Image";
     private static final String KEY_MODIFIED_SPECTRUM = "User Modified Power Spectrum (Log Scale)";
 
-    public static final int PANEL_WIDTH = 400; //
-    public static final int PANEL_HEIGHT = 400; //
+    public static final int PANEL_WIDTH = 400;
+    public static final int PANEL_HEIGHT = 400;
 
     public FourierView2D(FourierModel2D model) {
         super(model, "2D Fourier Transform - Spectrum Manipulation");
-        frame.setSize(850, 850); //
-        frame.setLayout(new GridLayout(2, 2, 5, 5)); //
+        frame.setSize(850, 850);
+        frame.setLayout(new GridLayout(2, 2, 5, 5));
 
-        // パネルを生成し、フレームに追加
+        // パネルを生成し、フレームに追加（ご依頼の通り順序を変更）
+        // 左上: 元画像
         addPanel(KEY_ORIGINAL_IMAGE, new ImagePanel(KEY_ORIGINAL_IMAGE));
-        addPanel(KEY_RECONSTRUCTED_IMAGE, new ImagePanel(KEY_RECONSTRUCTED_IMAGE));
+        // 右上: 元のパワースペクトル
         addPanel(KEY_ORIGINAL_SPECTRUM, new ImagePanel(KEY_ORIGINAL_SPECTRUM));
+        // 左下: 再構成画像
+        addPanel(KEY_RECONSTRUCTED_IMAGE, new ImagePanel(KEY_RECONSTRUCTED_IMAGE));
+        // 右下: ユーザーが変更したパワースペクトル
         addPanel(KEY_MODIFIED_SPECTRUM, new InfoImagePanel(KEY_MODIFIED_SPECTRUM));
 
-        model.addPropertyChangeListener(this); //
-        updateView(); //
-        setVisible(true); //
+        model.addPropertyChangeListener(this);
+        updateView();
+        setVisible(true);
     }
 
     /**
      * モデルの変更を検知し、ビュー（各パネル）を更新します。
+     * パネルの配置変更に合わせて更新ロジックを修正しました。
      */
     @Override
     protected void updateView() {
         FourierModel2D model2D = (FourierModel2D) getModel();
 
-        // 1. 元の画像 (カラーデータを直接設定)
+        // 左上のパネル: 元の画像 (カラー)
         ((ImagePanel) panels.get(KEY_ORIGINAL_IMAGE)).setData(model2D.getInitialOriginColorData());
 
-        // 2. IFFTで再構成された画像 (カラーデータを直接設定)
+        // 右上のパネル: 元のパワースペクトル (グレースケール -> カラー変換)
+        double[][] initialSpectrumData = model2D.getInitialPowerSpectrumData();
+        double[][][] initialSpectrumAsColor = convertGrayDataToColorData(initialSpectrumData, true);
+        ((ImagePanel) panels.get(KEY_ORIGINAL_SPECTRUM)).setData(initialSpectrumAsColor);
+
+        // 左下のパネル: IFFTで再構成された画像 (カラー)
         ((ImagePanel) panels.get(KEY_RECONSTRUCTED_IMAGE)).setData(model2D.getIfftResultColorData());
 
-        // 3. ユーザー操作によって再計算されたパワースペクトル
-        // (グレースケールデータをカラー形式に変換して設定)
-        double[][] spectrumData = model2D.getRecalculatedPowerSpectrumData();
-        double[][][] spectrumAsColor = convertGrayDataToColorData(spectrumData, true); // 対数スケールを適用
-        ((ImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setData(spectrumAsColor);
+        // 右下のパネル: ユーザー操作によって再計算されたパワースペクトル (グレースケール -> カラー変換)
+        double[][] modifiedSpectrumData = model2D.getRecalculatedPowerSpectrumData();
+        double[][][] modifiedSpectrumAsColor = convertGrayDataToColorData(modifiedSpectrumData, true);
+        ((ImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setData(modifiedSpectrumAsColor);
     }
     
     /**
@@ -168,9 +177,9 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
 
         @Override
         protected void paintComponent(Graphics g) {
-            super.paintComponent(g); //
-            if (image != null) { //
-                g.drawImage(image, 0, 0, this.getWidth(), this.getHeight(), null); //
+            super.paintComponent(g);
+            if (image != null) {
+                g.drawImage(image, 0, 0, this.getWidth(), this.getHeight(), null);
             }
         }
     }
