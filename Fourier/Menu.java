@@ -48,6 +48,32 @@ public class Menu {
         }
         popupMenu.add(saveFileItem);
 
+        popupMenu.addSeparator(); // 見た目を良くするための区切り線
+
+        // --- Clearメニュー ---
+        JMenuItem clearItem = new JMenuItem("Clear Spectrum");
+        clearItem.addActionListener(e -> {
+            // モデルのインスタンスタイプをチェックして適切なメソッドを呼び出す
+            if (model instanceof FourierModel1D) {
+                ((FourierModel1D) model).clearUserSpectrum();
+            } else if (model instanceof FourierModel2D) {
+                ((FourierModel2D) model).clearUserSpectrum();
+            }
+        });
+        popupMenu.add(clearItem);
+
+        // --- Fillメニュー ---
+        JMenuItem fillItem = new JMenuItem("Fill Spectrum");
+        fillItem.addActionListener(e -> {
+            // モデルのインスタンスタイプをチェックして適切なメソッドを呼び出す
+            if (model instanceof FourierModel1D) {
+                ((FourierModel1D) model).fillUserSpectrum();
+            } else if (model instanceof FourierModel2D) {
+                ((FourierModel2D) model).fillUserSpectrum();
+            }
+        });
+        popupMenu.add(fillItem);
+
         popupMenu.show(invoker, x, y);
     }
 

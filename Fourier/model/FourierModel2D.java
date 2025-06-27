@@ -273,6 +273,50 @@ public class FourierModel2D extends FourierModel {
         return complexArray;
     }
 
+    /**
+     * ユーザーが操作するスペクトルデータをすべてゼロ（クリア）にします。
+     */
+    public void clearUserSpectrum() {
+        int rows = userModifiedSpectrumData_R.length;
+        int cols = userModifiedSpectrumData_R[0].length;
+        Complex zero = new Complex(0.0, 0.0);
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                this.userModifiedSpectrumData_R[i][j] = zero;
+                this.userModifiedSpectrumData_G[i][j] = zero;
+                this.userModifiedSpectrumData_B[i][j] = zero;
+            }
+        }
+
+        // 変更をビューに反映させるために、関連する計算を実行し通知する
+        recalculatePowerSpectrumFromUserModifiedData();
+        performIfftAndNotify();
+        firePropertyChange("userModifiedSpectrumData", null, null); // スペクトルパネルの再描画をトリガー
+    }
+
+    /**
+     * ユーザーが操作するスペクトルデータを、最初に計算されたスペクトルデータですべて置き換えます（フィル）。
+     */
+    public void fillUserSpectrum() {
+        int rows = userModifiedSpectrumData_R.length;
+        int cols = userModifiedSpectrumData_R[0].length;
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                // 新しいComplexインスタンスを作成して代入する
+                this.userModifiedSpectrumData_R[i][j] = new Complex(initialComplexData_R[i][j].getReal(), initialComplexData_R[i][j].getImaginary());
+                this.userModifiedSpectrumData_G[i][j] = new Complex(initialComplexData_G[i][j].getReal(), initialComplexData_G[i][j].getImaginary());
+                this.userModifiedSpectrumData_B[i][j] = new Complex(initialComplexData_B[i][j].getReal(), initialComplexData_B[i][j].getImaginary());
+            }
+        }
+
+        // 変更をビューに反映させるために、関連する計算を実行し通知する
+        recalculatePowerSpectrumFromUserModifiedData();
+        performIfftAndNotify();
+        firePropertyChange("userModifiedSpectrumData", null, null); // スペクトルパネルの再描画をトリガー
+    }
+
     private Complex[][] transpose(Complex[][] matrix) {
         int rows = matrix.length;
         int cols = matrix[0].length;
