@@ -118,31 +118,50 @@ public class FourierModel2D extends FourierModel {
         int rows = userModifiedSpectrumData_R.length;
         int cols = userModifiedSpectrumData_R[0].length;
         
-        int colIndex = (int) (point.getX() * cols / FourierView2D.PANEL_WIDTH);
-        int rowIndex = (int) (point.getY() * rows / FourierView2D.PANEL_HEIGHT);
+        // マウス座標をブラシの中心となるインデックスにマッピング
+        int centerCol = (int) (point.getX() * cols / FourierView2D.PANEL_WIDTH);
+        int centerRow = (int) (point.getY() * rows / FourierView2D.PANEL_HEIGHT);
 
-        if (rowIndex >= 0 && rowIndex < rows && colIndex >= 0 && colIndex < cols) {
-            // 表示上のインデックス(シフト済み)を、内部データ用のインデックス(シフトなし)に変換
-            int halfRows = rows / 2;
-            int halfCols = cols / 2;
-            int unshiftedRow = (rowIndex < halfRows) ? (rowIndex + halfRows) : (rowIndex - halfRows);
-            int unshiftedCol = (colIndex < halfCols) ? (colIndex + halfCols) : (colIndex - halfCols);
+        double radiusSquared = brushSize * brushSize;
 
-            if (isAltDown) {
-                Complex zero = new Complex(0.0, 0.0);
-                userModifiedSpectrumData_R[unshiftedRow][unshiftedCol] = zero;
-                userModifiedSpectrumData_G[unshiftedRow][unshiftedCol] = zero;
-                userModifiedSpectrumData_B[unshiftedRow][unshiftedCol] = zero;
-            } else {
-                userModifiedSpectrumData_R[unshiftedRow][unshiftedCol] = new Complex(initialComplexData_R[unshiftedRow][unshiftedCol].getReal(), initialComplexData_R[unshiftedRow][unshiftedCol].getImaginary());
-                userModifiedSpectrumData_G[unshiftedRow][unshiftedCol] = new Complex(initialComplexData_G[unshiftedRow][unshiftedCol].getReal(), initialComplexData_G[unshiftedRow][unshiftedCol].getImaginary());
-                userModifiedSpectrumData_B[unshiftedRow][unshiftedCol] = new Complex(initialComplexData_B[unshiftedRow][unshiftedCol].getReal(), initialComplexData_B[unshiftedRow][unshiftedCol].getImaginary());
+        // ブラシの範囲（中心から上下左右に brushSize 分）を2重ループで処理
+        for (int r = centerRow - brushSize; r <= centerRow + brushSize; r++) {
+            for (int c = centerCol - brushSize; c <= centerCol + brushSize; c++) {
+
+                // 処理対象のインデックス (r, c) が配列の範囲内にあるかチェック
+                if (r >= 0 && r < rows && c >= 0 && c < cols) {
+                    
+                    // 変更点: 中心点からの距離の2乗を計算
+                    double distanceSquared = Math.pow(c - centerCol, 2) + Math.pow(r - centerRow, 2);
+
+                    // 変更点: 距離がブラシの半径内なら処理を実行
+                    if (distanceSquared <= radiusSquared) {
+                        
+                        // 表示上のインデックス(シフト済み)を、内部データ用のインデックス(シフトなし)に変換
+                        int halfRows = rows / 2;
+                        int halfCols = cols / 2;
+                        int unshiftedRow = (r < halfRows) ? (r + halfRows) : (r - halfRows);
+                        int unshiftedCol = (c < halfCols) ? (c + halfCols) : (c - halfCols);
+
+                        if (isAltDown) {
+                            Complex zero = new Complex(0.0, 0.0);
+                            userModifiedSpectrumData_R[unshiftedRow][unshiftedCol] = zero;
+                            userModifiedSpectrumData_G[unshiftedRow][unshiftedCol] = zero;
+                            userModifiedSpectrumData_B[unshiftedRow][unshiftedCol] = zero;
+                        } else {
+                            userModifiedSpectrumData_R[unshiftedRow][unshiftedCol] = new Complex(initialComplexData_R[unshiftedRow][unshiftedCol].getReal(), initialComplexData_R[unshiftedRow][unshiftedCol].getImaginary());
+                            userModifiedSpectrumData_G[unshiftedRow][unshiftedCol] = new Complex(initialComplexData_G[unshiftedRow][unshiftedCol].getReal(), initialComplexData_G[unshiftedRow][unshiftedCol].getImaginary());
+                            userModifiedSpectrumData_B[unshiftedRow][unshiftedCol] = new Complex(initialComplexData_B[unshiftedRow][unshiftedCol].getReal(), initialComplexData_B[unshiftedRow][unshiftedCol].getImaginary());
+                        }
+                    }
+                }
             }
-            
-            firePropertyChange("userModifiedSpectrumData", null, null);
-            recalculatePowerSpectrumFromUserModifiedData();
-            performIfftAndNotify();
         }
+        
+        // ループ処理が全て終わった後、一度だけ更新通知を行う
+        firePropertyChange("userModifiedSpectrumData", null, null);
+        recalculatePowerSpectrumFromUserModifiedData();
+        performIfftAndNotify();
         
         firePropertyChange("calculationPoint", null, point);
         firePropertyChange("altKeyState", null, isAltDown);

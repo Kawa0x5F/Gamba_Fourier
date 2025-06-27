@@ -25,9 +25,6 @@ public class FourierModel1D extends FourierModel {
     // 6. userModifiedSpectrumDataからIFFTで再構成された時間領域データ
     private double[] ifftResultData; 
 
-    // ブラシの半径を定義するフィールド
-    private int brushSize = 5;
-
     private Point lastCalculationPoint;
     private boolean isAltDown;
 
@@ -92,10 +89,6 @@ public class FourierModel1D extends FourierModel {
 
     public boolean getIsAltDown() {
         return isAltDown;
-    }
-
-    public void setBrushSize(int brushSize) {
-        this.brushSize = Math.max(0, brushSize);
     }
 
     // --- ヘルパーメソッド ---

@@ -14,29 +14,66 @@ import java.util.Map;
 public abstract class FourierView implements PropertyChangeListener {
     private final FourierModel model;
     protected final JFrame frame;
-    // *** 変更点 *** JPanelを直接保持するように変更
     protected final Map<String, JPanel> panels;
+    
+    private final JPanel contentPanel;
 
     public FourierView(FourierModel model, String title) {
         this.model = model;
         this.model.addPropertyChangeListener(this);
-
         this.frame = new JFrame(title);
-        // *** 変更点 *** JPanelを直接保持するように変更
         this.panels = new HashMap<>();
+
+        // フレームのレイアウトをBorderLayoutに設定
+        this.frame.setLayout(new BorderLayout(5, 5));
+        
+        // メインコンテンツ用のパネルをGridLayoutで初期化
+        this.contentPanel = new JPanel(new GridLayout(2, 2, 5, 5));
+        this.frame.add(contentPanel, BorderLayout.CENTER);
+
+        // ブラシ調整用のコントロールパネルを作成して追加
+        JPanel controlPanel = createBrushControlPanel();
+        this.frame.add(controlPanel, BorderLayout.SOUTH);
 
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setLocationRelativeTo(null);
     }
 
-    protected FourierModel getModel() {
+    // 可視性を public に変更し、エラーの可能性をなくします
+    public FourierModel getModel() {
         return this.model;
     }
     
-    // *** 変更点 *** JPanelを直接受け取るように変更
+    // パネルをフレームではなく、contentPanelに追加するように修正
     protected void addPanel(String name, JPanel panel) {
         this.panels.put(name, panel);
-        this.frame.add(panel);
+        this.contentPanel.add(panel);
+    }
+    
+    /**
+     * ブラシサイズ調整用UIパネルを生成するヘルパーメソッド
+     */
+    private JPanel createBrushControlPanel() {
+        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        
+        int initialBrushSize = getModel().getBrushSize();
+        
+        JSlider brushSlider = new JSlider(JSlider.HORIZONTAL, 1, 10, initialBrushSize);
+        brushSlider.setMajorTickSpacing(1);
+        brushSlider.setPaintTicks(true);
+        brushSlider.setPaintLabels(true);
+        
+        brushSlider.addChangeListener(e -> {
+            JSlider source = (JSlider) e.getSource();
+            if (!source.getValueIsAdjusting()) { 
+                getModel().setBrushSize(source.getValue());
+            }
+        });
+        
+        controlPanel.add(new JLabel("Brush Size:"));
+        controlPanel.add(brushSlider);
+        
+        return controlPanel;
     }
 
     @Override
@@ -48,13 +85,6 @@ public abstract class FourierView implements PropertyChangeListener {
         this.frame.setVisible(visible);
     }
 
-    // *** 変更点 *** ここから下のリスナー登録メソッドを修正
-
-    /**
-     * 指定されたキーを持つパネルにマウスリスナーを登録します。
-     * @param panelKey パネルを識別するキー（タイトル文字列）
-     * @param listener 登録するマウスリスナー
-     */
     public void addMouseListenerToPanel(String panelKey, MouseListener listener) {
         JPanel panel = this.panels.get(panelKey);
         if (panel != null) {
@@ -64,11 +94,6 @@ public abstract class FourierView implements PropertyChangeListener {
         }
     }
 
-    /**
-     * 指定されたキーを持つパネルにマウスモーションリスナーを登録します。
-     * @param panelKey パネルを識別するキー（タイトル文字列）
-     * @param listener 登録するマウスモーションリスナー
-     */
     public void addMouseMotionListenerToPanel(String panelKey, MouseMotionListener listener) {
         JPanel panel = this.panels.get(panelKey);
         if (panel != null) {
@@ -78,10 +103,6 @@ public abstract class FourierView implements PropertyChangeListener {
         }
     }
 
-    /**
-     * 管理している全てのパネルにマウスリスナーを登録します。
-     * @param listener 登録するマウスリスナー
-     */
     public void addMouseListenerToAllPanels(MouseListener listener) {
         for (JPanel panel : this.panels.values()) {
             panel.addMouseListener(listener);
