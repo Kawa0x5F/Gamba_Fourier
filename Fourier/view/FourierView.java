@@ -25,7 +25,7 @@ public abstract class FourierView implements PropertyChangeListener {
         // *** 変更点 *** JPanelを直接保持するように変更
         this.panels = new HashMap<>();
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setLocationRelativeTo(null);
     }
 

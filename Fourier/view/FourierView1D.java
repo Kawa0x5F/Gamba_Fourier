@@ -15,14 +15,14 @@ public class FourierView1D extends FourierView implements PropertyChangeListener
     private static final String KEY_IFFT_RESULT = "Reconstructed Signal"; // IFFT結果（時間領域）
     private static final String KEY_USER_MOD_SPECTRUM = "User Modified Power Spectrum"; // ユーザー操作スペクトルと情報
 
-    public static final int PANEL_WIDTH = 400; // Modelでも参照されるためpublic static
-    public static final int PANEL_HEIGHT = 250; // マウスY座標の計算に必要なので追加
+    public static final int PANEL_WIDTH = 400;
+    public static final int PANEL_HEIGHT = 250;
 
-    public FourierView1D(FourierModel1D model) {
+    public FourierView1D(FourierModel1D model, int creationIndex) {
         super(model, "1D Fourier Transform - Spectrum Manipulation");
 
-        frame.setSize(800, 600); // 画面サイズを調整
-        frame.setLayout(new GridLayout(2, 2, 5, 5)); // 2x2グリッド
+        frame.setSize(800, 600);
+        frame.setLayout(new GridLayout(2, 2, 5, 5));
 
         // パネルの追加とタイトル設定
         addPanel(KEY_ORIGINAL, new SignalPanel(KEY_ORIGINAL)); // 左上: 元の信号
@@ -31,7 +31,12 @@ public class FourierView1D extends FourierView implements PropertyChangeListener
         addPanel(KEY_USER_MOD_SPECTRUM, new InfoSignalPanel(KEY_USER_MOD_SPECTRUM)); // 右下: ユーザー操作スペクトルと情報
 
         model.addPropertyChangeListener(this);
-        updateView(); // 初回表示の更新
+        updateView();
+
+        // 受け取った creationIndex に基づいて位置を計算し、ずらして表示
+        int offset = creationIndex * 30; // 30pxずつずらす
+        frame.setLocation(offset, offset);
+
         setVisible(true);
     }
 
