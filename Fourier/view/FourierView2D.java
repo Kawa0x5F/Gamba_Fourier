@@ -22,7 +22,7 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
     public static final int PANEL_WIDTH = 400;
     public static final int PANEL_HEIGHT = 400;
 
-    public FourierView2D(FourierModel2D model) {
+    public FourierView2D(FourierModel2D model, int creationIndex) {
         super(model, "2D Fourier Transform - Spectrum Manipulation");
         frame.setSize(850, 850);
         frame.setLayout(new GridLayout(2, 2, 5, 5));
@@ -39,6 +39,10 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
 
         model.addPropertyChangeListener(this);
         updateView();
+
+        int offset = creationIndex * 30;
+        frame.setLocation(offset, offset);
+
         setVisible(true);
     }
 

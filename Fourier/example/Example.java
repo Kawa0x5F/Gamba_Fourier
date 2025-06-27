@@ -9,6 +9,11 @@ import Fourier.FileIO;
 
 public class Example {
 
+    /** ウィンドウをずらす量 (ピクセル単位) */
+    private static final int WINDOW_OFFSET = 30;
+    /** 作成したウィンドウの数を数える静的カウンター */
+    private static int windowCreationCount = 0;
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             // --- 初期データで1Dデモを開始 ---
@@ -33,7 +38,8 @@ public class Example {
         
         System.out.println("--- Starting/Restarting 1D Demo ---"); //
         FourierModel1D model1D = new FourierModel1D(signalData); //
-        FourierView1D view1D = new FourierView1D(model1D); //
+        FourierView1D view1D = new FourierView1D(model1D, windowCreationCount);
+        windowCreationCount++;
         
         // --- コントローラの登録 ---
 
@@ -58,7 +64,8 @@ public class Example {
 
         System.out.println("\n--- Starting/Restarting 2D Demo ---"); //
         FourierModel2D model2D = new FourierModel2D(colorImageData); //
-        FourierView2D view2D = new FourierView2D(model2D); //
+        FourierView2D view2D = new FourierView2D(model2D, windowCreationCount);
+        windowCreationCount++;
         
         // --- コントローラの登録 ---
 

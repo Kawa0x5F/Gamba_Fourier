@@ -1,20 +1,38 @@
 package Fourier;
 
 import java.awt.image.BufferedImage;
-import java.io.*; // File, FileReader, BufferedReaderなどをインポート
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 
 public class FileIO {
+
     /**
      * CSVファイルから1次元信号を読み込みます。
-     * @param filePath 読み込むCSVファイルの絶対パス
+     * クラスパスリソース、ファイルシステム上の絶対パスの両方に対応します。
+     * @param filePath 読み込むCSVファイルのリソースパス、または絶対パス
      */
     public static double[] readSignalFromCSV(String filePath) {
         List<Double> signalList = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath, StandardCharsets.UTF_8))) {
+        InputStream is = null;
+
+        // ステップ1: まずクラスパス上のリソースとして読み込みを試みる
+        is = FileIO.class.getResourceAsStream(filePath);
+
+        // ステップ2: クラスパスで見つからなかった場合、ファイルシステムのパスとして試みる
+        if (is == null) {
+            try {
+                is = new FileInputStream(filePath);
+            } catch (FileNotFoundException e) {
+                System.err.println("指定されたパスはリソースとしてもファイルとしても見つかりませんでした: " + filePath);
+                return null;
+            }
+        }
+
+        // ステップ3: InputStreamが取得できたら、共通のCSV読み込み処理を実行する
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;
             while ((line = br.readLine()) != null) {
                 if (!line.trim().isEmpty()) {
@@ -23,8 +41,9 @@ public class FileIO {
             }
         } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
-            return null; // エラー時はnullを返す
+            return null;
         }
+
         return signalList.stream().mapToDouble(Double::doubleValue).toArray();
     }
 
@@ -33,14 +52,25 @@ public class FileIO {
      * @param filePath 読み込む画像ファイルの絶対パス
      */
     public static double[][][] readSignalFromImage(String filePath) {
-        try (InputStream is = FileIO.class.getResourceAsStream(filePath)) {
-            if (is == null) {
-                System.err.println("リソースが見つかりません: " + filePath);
-                System.err.println("プロジェクトの 'resources' フォルダなどに画像ファイルが正しく配置されているか確認してください。");
+        InputStream is = null;
+
+        // ステップ1: まずクラスパス上のリソースとして読み込みを試みる
+        is = FileIO.class.getResourceAsStream(filePath);
+
+        // ステップ2: クラスパスで見つからなかった場合(isがnullの場合)、ファイルシステムのパスとして試みる
+        if (is == null) {
+            try {
+                is = new FileInputStream(filePath);
+            } catch (FileNotFoundException e) {
+                // クラスパスにもファイルシステムにも存在しなかった場合
+                System.err.println("指定されたパスはリソースとしてもファイルとしても見つかりませんでした: " + filePath);
                 return null;
             }
+        }
 
-            BufferedImage image = ImageIO.read(is);
+        // ステップ3: InputStreamが取得できたら、共通の画像読み込み処理を実行する
+        try (InputStream autoCloseableIs = is) {
+            BufferedImage image = ImageIO.read(autoCloseableIs);
             if (image == null) {
                 System.err.println("画像の読み込みに失敗しました(サポートされていない形式の可能性があります): " + filePath);
                 return null;
