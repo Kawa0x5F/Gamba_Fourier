@@ -7,13 +7,8 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-/**
- * 2Dフーリエ変換のビュークラス。
- * すべてのパネル表示を3チャンネルのカラー画像を基準に行うように修正されています。
- */
 public class FourierView2D extends FourierView implements PropertyChangeListener {
 
-    // 各パネルを識別するためのキー
     private static final String KEY_ORIGINAL_IMAGE = "Original Image";
     private static final String KEY_ORIGINAL_SPECTRUM = "Original Power Spectrum (Log Scale)";
     private static final String KEY_RECONSTRUCTED_IMAGE = "Reconstructed Image";
@@ -22,62 +17,43 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
     public static final int PANEL_WIDTH = 400;
     public static final int PANEL_HEIGHT = 400;
 
+    // --- コンストラクタを簡素化 ---
     public FourierView2D(FourierModel2D model, int creationIndex) {
         super(model, "2D Fourier Transform - Spectrum Manipulation");
-        frame.setSize(850, 850);
-        frame.setLayout(new GridLayout(2, 2, 5, 5));
-
-        // パネルを生成し、フレームに追加（ご依頼の通り順序を変更）
-        // 左上: 元画像
+        
+        // パネルの生成と追加
         addPanel(KEY_ORIGINAL_IMAGE, new ImagePanel(KEY_ORIGINAL_IMAGE));
-        // 右上: 元のパワースペクトル
         addPanel(KEY_ORIGINAL_SPECTRUM, new ImagePanel(KEY_ORIGINAL_SPECTRUM));
-        // 左下: 再構成画像
         addPanel(KEY_RECONSTRUCTED_IMAGE, new ImagePanel(KEY_RECONSTRUCTED_IMAGE));
-        // 右下: ユーザーが変更したパワースペクトル
         addPanel(KEY_MODIFIED_SPECTRUM, new InfoImagePanel(KEY_MODIFIED_SPECTRUM));
 
-        model.addPropertyChangeListener(this);
         updateView();
 
         int offset = creationIndex * 30;
         frame.setLocation(offset, offset);
 
+        // コンポーネントに基づいてフレームサイズを自動調整
+        frame.pack();
         setVisible(true);
     }
-
-    /**
-     * モデルの変更を検知し、ビュー（各パネル）を更新します。
-     * パネルの配置変更に合わせて更新ロジックを修正しました。
-     */
+    
     @Override
     protected void updateView() {
         FourierModel2D model2D = (FourierModel2D) getModel();
 
-        // 左上のパネル: 元の画像 (カラー)
         ((ImagePanel) panels.get(KEY_ORIGINAL_IMAGE)).setData(model2D.getInitialOriginColorData());
 
-        // 右上のパネル: 元のパワースペクトル (グレースケール -> カラー変換)
         double[][] initialSpectrumData = model2D.getInitialPowerSpectrumData();
         double[][][] initialSpectrumAsColor = convertGrayDataToColorData(initialSpectrumData, true);
         ((ImagePanel) panels.get(KEY_ORIGINAL_SPECTRUM)).setData(initialSpectrumAsColor);
 
-        // 左下のパネル: IFFTで再構成された画像 (カラー)
         ((ImagePanel) panels.get(KEY_RECONSTRUCTED_IMAGE)).setData(model2D.getIfftResultColorData());
 
-        // 右下のパネル: ユーザー操作によって再計算されたパワースペクトル (グレースケール -> カラー変換)
         double[][] modifiedSpectrumData = model2D.getRecalculatedPowerSpectrumData();
         double[][][] modifiedSpectrumAsColor = convertGrayDataToColorData(modifiedSpectrumData, true);
         ((ImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setData(modifiedSpectrumAsColor);
     }
     
-    /**
-     * 単一チャンネルのグレースケールデータを、3チャンネルのカラーデータに変換します。
-     * スペクトル表示のために使用します。
-     * @param grayData 変換元のグレースケールデータ (double[][])
-     * @param useLogScale 対数スケールを適用するかどうか
-     * @return 変換後のカラーデータ (double[][][])
-     */
     private double[][][] convertGrayDataToColorData(double[][] grayData, boolean useLogScale) {
         if (grayData == null || grayData.length == 0) return null;
 
@@ -88,7 +64,6 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         double max = Double.MIN_VALUE;
         double min = Double.MAX_VALUE;
 
-        // データの最大値・最小値を探す
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 double val = useLogScale ? Math.log1p(grayData[y][x]) : grayData[y][x];
@@ -100,14 +75,13 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         double range = max - min;
         if (range == 0) range = 1;
 
-        // データを0-255の輝度値に正規化し、RGB全チャンネルに同じ値を設定
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 double val = useLogScale ? Math.log1p(grayData[y][x]) : grayData[y][x];
                 double normalizedValue = 255 * (val - min) / range;
-                colorData[x][y][0] = normalizedValue; // R
-                colorData[x][y][1] = normalizedValue; // G
-                colorData[x][y][2] = normalizedValue; // B
+                colorData[x][y][0] = normalizedValue;
+                colorData[x][y][1] = normalizedValue;
+                colorData[x][y][2] = normalizedValue;
             }
         }
         return colorData;
@@ -115,25 +89,17 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        String propertyName = evt.getPropertyName();
+        super.propertyChange(evt); // updateViewを呼び出す
 
-        switch (propertyName) {
-            case "userModifiedSpectrumData":
-            case "recalculatedPowerSpectrumData":
-            case "ifftResultData":
-                updateView();
-                break;
-            
-            case "calculationPoint":
-            case "altKeyState":
-                FourierModel2D model2D = (FourierModel2D) getModel();
-                if (panels.get(KEY_MODIFIED_SPECTRUM) instanceof InfoImagePanel) {
-                    ((InfoImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setCalculationInfo(
-                        model2D.getLastCalculationPoint(),
-                        model2D.getIsAltDown()
-                    );
-                }
-                break;
+        String propertyName = evt.getPropertyName();
+        if (propertyName.equals("calculationPoint") || propertyName.equals("altKeyState")) {
+            FourierModel2D model2D = (FourierModel2D) getModel();
+            if (panels.get(KEY_MODIFIED_SPECTRUM) instanceof InfoImagePanel) {
+                ((InfoImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setCalculationInfo(
+                    model2D.getLastCalculationPoint(),
+                    model2D.getIsAltDown()
+                );
+            }
         }
     }
 

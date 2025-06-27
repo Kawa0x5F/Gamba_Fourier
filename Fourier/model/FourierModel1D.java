@@ -24,7 +24,7 @@ public class FourierModel1D extends FourierModel {
 
     // 6. userModifiedSpectrumDataからIFFTで再構成された時間領域データ
     private double[] ifftResultData; 
-    
+
     private Point lastCalculationPoint;
     private boolean isAltDown;
 
@@ -120,30 +120,37 @@ public class FourierModel1D extends FourierModel {
         this.isAltDown = isAltDown;
         
         if (userModifiedSpectrumData != null && userModifiedSpectrumData.length > 0 && initialComplexDataForFFT != null) {
-            // X座標を周波数ビンのインデックスにマッピング
-            int index = (int) (point.getX() * userModifiedSpectrumData.length / FourierView1D.PANEL_WIDTH); 
+            // X座標をブラシの中心となるインデックスにマッピング
+            int centerIndex = (int) (point.getX() * userModifiedSpectrumData.length / FourierView1D.PANEL_WIDTH); 
             
-            if (index >= 0 && index < userModifiedSpectrumData.length) {
-                // 表示されているインデックス(シフト済み)を、内部データ用のインデックス(シフトなし)に変換
-                int N = userModifiedSpectrumData.length;
-                int halfN = N / 2;
-                int unshiftedIndex = (index < halfN) ? (index + halfN) : (index - halfN);
-
-                if (isAltDown) {
-                    // Altキーが押されたら、該当する周波数成分を0にリセットする
-                    userModifiedSpectrumData[unshiftedIndex] = new Complex(0, 0); 
-                } else {
-                    // マウスのY座標は無視する
-                    // クリックされた位置に対応する「元のスペクトルデータ」を取得
-                    Complex originalSpectrumValue = initialComplexDataForFFT[unshiftedIndex];
-                    // ユーザーが操作するスペクトルデータに、元のスペクトル値をセットする
-                    userModifiedSpectrumData[unshiftedIndex] = new Complex(originalSpectrumValue.getReal(), originalSpectrumValue.getImaginary());
-                }
+            // ブラシの範囲（中心から左右に brushSize 分）をループ処理
+            for (int i = centerIndex - brushSize; i <= centerIndex + brushSize; i++) {
                 
-                firePropertyChange("userModifiedSpectrumData", null, this.userModifiedSpectrumData); 
-                recalculateSpectrumFromUserModifiedData();
-                performIfftAndNotify();
+                // 処理対象のインデックス `i` が配列の範囲内にあるかチェック
+                if (i >= 0 && i < userModifiedSpectrumData.length) {
+                    int index = i; // 変数名を合わせる
+
+                    // 表示されているインデックス(シフト済み)を、内部データ用のインデックス(シフトなし)に変換
+                    int N = userModifiedSpectrumData.length;
+                    int halfN = N / 2;
+                    int unshiftedIndex = (index < halfN) ? (index + halfN) : (index - halfN);
+
+                    if (isAltDown) {
+                        // Altキーが押されたら、該当する周波数成分を0にリセットする
+                        userModifiedSpectrumData[unshiftedIndex] = new Complex(0, 0); 
+                    } else {
+                        // クリックされた位置に対応する「元のスペクトルデータ」を取得
+                        Complex originalSpectrumValue = initialComplexDataForFFT[unshiftedIndex];
+                        // ユーザーが操作するスペクトルデータに、元のスペクトル値をセットする
+                        userModifiedSpectrumData[unshiftedIndex] = new Complex(originalSpectrumValue.getReal(), originalSpectrumValue.getImaginary());
+                    }
+                }
             }
+            
+            // ループ処理が終わった後、一度だけ更新通知を行う
+            firePropertyChange("userModifiedSpectrumData", null, this.userModifiedSpectrumData); 
+            recalculateSpectrumFromUserModifiedData();
+            performIfftAndNotify();
         }
         
         firePropertyChange("calculationPoint", null, point);
