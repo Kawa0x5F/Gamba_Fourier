@@ -30,9 +30,9 @@ public class Menu {
         JPopupMenu popupMenu = new JPopupMenu();
 
         // --- ファイルを開くメニュー ---
-        JMenuItem openFileItem = new JMenuItem("Open File..."); //
-        openFileItem.addActionListener(e -> handleOpenFile(invoker)); //
-        popupMenu.add(openFileItem); //
+        JMenuItem openFileItem = new JMenuItem("Open File...");
+        openFileItem.addActionListener(e -> handleOpenFile(invoker));
+        popupMenu.add(openFileItem);
 
         // --- 保存メニュー ---
         JMenuItem saveFileItem = new JMenuItem("Save Reconstructed Data As...");
@@ -48,7 +48,7 @@ public class Menu {
         }
         popupMenu.add(saveFileItem);
 
-        popupMenu.show(invoker, x, y); //
+        popupMenu.show(invoker, x, y);
     }
 
     /**
@@ -57,24 +57,20 @@ public class Menu {
      * @param parent ダイアログの親コンポーネント
      */
     private void handleOpenFile(Component parent) {
-        String path = getOpenFilePath(parent); //
-        if (path == null) return; //
+        String path = getOpenFilePath(parent);
+        if (path == null) return;
 
-        if (model instanceof FourierModel1D) { //
-            double[] data = FileIO.readSignalFromCSV(path); //
-            if (data != null) { //
+        if (model instanceof FourierModel1D) {
+            double[] data = FileIO.readSignalFromCSV(path);
+            if (data != null) {
                 // Exampleクラスに新しいデータで1Dデモを再起動するように依頼
-                Example.restart1DDemoWithData(data); //
-                // 現在のウィンドウを閉じる
-                SwingUtilities.getWindowAncestor(parent).dispose(); //
+                Example.restart1DDemoWithData(data);
             }
-        } else if (model instanceof FourierModel2D) { //
-            double[][][] colorData = FileIO.readSignalFromImage(path); //
-            if (colorData != null) { //
+        } else if (model instanceof FourierModel2D) {
+            double[][][] colorData = FileIO.readSignalFromImage(path);
+            if (colorData != null) {
                 // Exampleクラスの再起動メソッドを呼び出す
-                Example.restart2DDemoWithData(colorData); //
-                // 現在のウィンドウを閉じる
-                SwingUtilities.getWindowAncestor(parent).dispose(); //
+                Example.restart2DDemoWithData(colorData);
             }
         }
     }
@@ -110,11 +106,11 @@ public class Menu {
      * @return ファイルパス。選択されなかった場合はnull。
      */
     public static String getOpenFilePath(Component parent) {
-        JFileChooser chooser = new JFileChooser(); //
-        if (chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) { //
-            return chooser.getSelectedFile().getAbsolutePath(); //
+        JFileChooser chooser = new JFileChooser();
+        if (chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
+            return chooser.getSelectedFile().getAbsolutePath();
         }
-        return null; //
+        return null;
     }
 
     /**
@@ -123,10 +119,10 @@ public class Menu {
      * @return ファイルパス。選択されなかった場合はnull。
      */
     public static String getSaveFilePath(Component parent) {
-        JFileChooser chooser = new JFileChooser(); //
-        if (chooser.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) { //
-            return chooser.getSelectedFile().getAbsolutePath(); //
+        JFileChooser chooser = new JFileChooser();
+        if (chooser.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) {
+            return chooser.getSelectedFile().getAbsolutePath();
         }
-        return null; //
+        return null;
     }
 }
