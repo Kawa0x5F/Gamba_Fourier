@@ -38,8 +38,22 @@ public class FourierView1D extends FourierView implements PropertyChangeListener
         addPanel(KEY_IFFT_RESULT, ifftResultPanel);
         
         // 右下: ユーザー操作スペクトルと情報
-        // InfoSignalPanelは内部クラスで直接修正
-        addPanel(KEY_USER_MOD_SPECTRUM, new InfoSignalPanel(KEY_USER_MOD_SPECTRUM));
+        // 1. 元のスペクトルの最大値を取得
+        FourierModel1D model1D = (FourierModel1D) getModel();
+        double initialSpectrumMax = 0;
+        double[] initialSpectrum = model1D.getInitialCalculatedPowerSpectrumData(); //
+        if (initialSpectrum != null) {
+            for (double v : initialSpectrum) {
+                if (v > initialSpectrumMax) {
+                    initialSpectrumMax = v;
+                }
+            }
+        }
+
+        // 2. InfoSignalPanelを生成し、最大値を設定
+        InfoSignalPanel userSpectrumPanel = new InfoSignalPanel(KEY_USER_MOD_SPECTRUM);
+        userSpectrumPanel.setFixedMaxValue(initialSpectrumMax);
+        addPanel(KEY_USER_MOD_SPECTRUM, userSpectrumPanel);
 
         updateView();
 

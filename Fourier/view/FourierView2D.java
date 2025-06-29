@@ -17,6 +17,9 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
     public static final int PANEL_WIDTH = 400;
     public static final int PANEL_HEIGHT = 400;
 
+    private double initialSpectrumLogMin;
+    private double initialSpectrumLogMax;
+
     // --- コンストラクタを簡素化 ---
     public FourierView2D(FourierModel2D model, int creationIndex) {
         super(model, "2D Fourier Transform - Spectrum Manipulation");
@@ -26,7 +29,9 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         addPanel(KEY_ORIGINAL_SPECTRUM, new ImagePanel(KEY_ORIGINAL_SPECTRUM));
         addPanel(KEY_RECONSTRUCTED_IMAGE, new ImagePanel(KEY_RECONSTRUCTED_IMAGE));
         addPanel(KEY_MODIFIED_SPECTRUM, new InfoImagePanel(KEY_MODIFIED_SPECTRUM));
-
+        
+        calculateAndStoreInitialSpectrumRange(model);
+        
         updateView();
 
         int offset = creationIndex * 30;
@@ -50,7 +55,7 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         ((ImagePanel) panels.get(KEY_RECONSTRUCTED_IMAGE)).setData(model2D.getIfftResultColorData());
 
         double[][] modifiedSpectrumData = model2D.getRecalculatedPowerSpectrumData();
-        double[][][] modifiedSpectrumAsColor = convertGrayDataToColorData(modifiedSpectrumData, true);
+        double[][][] modifiedSpectrumAsColor = convertGrayDataToColorDataWithFixedRange(modifiedSpectrumData, true);
         ((ImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setData(modifiedSpectrumAsColor);
     }
     
@@ -79,6 +84,45 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
             for (int x = 0; x < width; x++) {
                 double val = useLogScale ? Math.log1p(grayData[y][x]) : grayData[y][x];
                 double normalizedValue = 255 * (val - min) / range;
+                colorData[x][y][0] = normalizedValue;
+                colorData[x][y][1] = normalizedValue;
+                colorData[x][y][2] = normalizedValue;
+            }
+        }
+        return colorData;
+    }
+
+    /**
+     * グレースケールデータを、クラスに保存された固定の輝度範囲（元のスペクトルのmin/max）を
+     * 使って正規化し、カラースデータに変換します。
+     * @param grayData グレースケールデータ
+     * @param useLogScale 対数スケールを使用するかどうか
+     * @return 変換後のカラーデータ
+     */
+    private double[][][] convertGrayDataToColorDataWithFixedRange(double[][] grayData, boolean useLogScale) {
+        if (grayData == null || grayData.length == 0) return null;
+
+        int height = grayData.length;
+        int width = grayData[0].length;
+        double[][][] colorData = new double[width][height][3];
+
+        // インスタンス変数として保持している固定のmin/maxを使用
+        double min = this.initialSpectrumLogMin;
+        double max = this.initialSpectrumLogMax;
+        
+        double range = max - min;
+        if (range == 0) range = 1;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                double val = useLogScale ? Math.log1p(grayData[y][x]) : grayData[y][x];
+                
+                // 保存しておいた範囲を使って正規化
+                double normalizedValue = 255 * (val - min) / range;
+                
+                // 0-255の範囲に値をクリップ
+                normalizedValue = Math.max(0, Math.min(255, normalizedValue));
+                
                 colorData[x][y][0] = normalizedValue;
                 colorData[x][y][1] = normalizedValue;
                 colorData[x][y][2] = normalizedValue;
@@ -183,5 +227,33 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
                 g.drawString(altInfo, 10, getHeight() - 10);
             }
         }
+    }
+
+    /**
+     * 元の画像のパワースペクトルから、対数スケールでの輝度の最小値と最大値を計算し、
+     * インスタンス変数に保存します。この処理は一度だけ呼び出されます。
+     * @param model データモデル
+     */
+    private void calculateAndStoreInitialSpectrumRange(FourierModel2D model) {
+        double[][] initialSpectrum = model.getInitialPowerSpectrumData();
+        if (initialSpectrum == null || initialSpectrum.length == 0) {
+            this.initialSpectrumLogMin = 0.0;
+            this.initialSpectrumLogMax = 1.0; // デフォルト値
+            return;
+        }
+
+        double maxVal = Double.NEGATIVE_INFINITY;
+        double minVal = Double.POSITIVE_INFINITY;
+
+        for (int y = 0; y < initialSpectrum.length; y++) {
+            for (int x = 0; x < initialSpectrum[0].length; x++) {
+                // スペクトル表示は常に対数スケールで行う
+                double logVal = Math.log1p(initialSpectrum[y][x]);
+                if (logVal > maxVal) maxVal = logVal;
+                if (logVal < minVal) minVal = logVal;
+            }
+        }
+        this.initialSpectrumLogMin = minVal;
+        this.initialSpectrumLogMax = maxVal;
     }
 }
