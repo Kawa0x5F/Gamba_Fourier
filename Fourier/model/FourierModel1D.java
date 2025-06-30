@@ -8,7 +8,7 @@ import Fourier.view.FourierView1D; // PANEL_WIDTH, PANEL_HEIGHT を使用する�
 public class FourierModel1D extends FourierModel {
 
     // 1. オリジナルの波形データ（変更不可）
-    private double[] initialOriginData; 
+    private double[] initialOriginData;
     
     // 2. 最初にinitialOriginDataから計算されたFFTスペクトル (シフトなし)
     private Complex[] initialComplexDataForFFT; 
@@ -185,39 +185,5 @@ public class FourierModel1D extends FourierModel {
         this.ifftResultData = newIfftResultData;
 
         firePropertyChange("ifftResultData", null, this.ifftResultData);
-    }
-
-    /**
-     * ユーザーが操作するスペクトルデータをすべてゼロ（クリア）にします。
-     */
-    public void clearUserSpectrum() {
-        if (this.userModifiedSpectrumData == null) return;
-
-        Complex zero = new Complex(0.0, 0.0);
-        for (int i = 0; i < this.userModifiedSpectrumData.length; i++) {
-            this.userModifiedSpectrumData[i] = zero;
-        }
-
-        // 変更をビューに反映させるために、関連する計算を実行し通知する
-        recalculateSpectrumFromUserModifiedData();
-        performIfftAndNotify();
-    }
-
-    /**
-     * ユーザーが操作するスペクトルデータを、最初に計算されたスペクトルデータですべて置き換えます（フィル）。
-     */
-    public void fillUserSpectrum() {
-        if (this.userModifiedSpectrumData == null || this.initialComplexDataForFFT == null) return;
-        if (this.userModifiedSpectrumData.length != this.initialComplexDataForFFT.length) return;
-
-        for (int i = 0; i < this.userModifiedSpectrumData.length; i++) {
-            Complex originalSpectrumValue = this.initialComplexDataForFFT[i];
-            // 新しいComplexインスタンスを作成して代入する
-            this.userModifiedSpectrumData[i] = new Complex(originalSpectrumValue.getReal(), originalSpectrumValue.getImaginary());
-        }
-
-        // 変更をビューに反映させるために、関連する計算を実行し通知する
-        recalculateSpectrumFromUserModifiedData();
-        performIfftAndNotify();
     }
 }
