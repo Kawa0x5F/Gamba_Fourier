@@ -35,6 +35,14 @@ public abstract class FourierModel {
 
     public abstract void computeFromMousePoint(Point point, Boolean isAltDown);
 
+    /**
+     * パネルサイズを考慮したマウス座標計算（オーバーロード）
+     * デフォルト実装では既存のメソッドを呼び出す
+     */
+    public void computeFromMousePoint(Point point, Boolean isAltDown, int panelWidth, int panelHeight) {
+        computeFromMousePoint(point, isAltDown);
+    }
+
     protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
         support.firePropertyChange(propertyName, oldValue, newValue);
     }

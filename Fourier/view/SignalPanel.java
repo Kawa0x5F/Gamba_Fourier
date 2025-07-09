@@ -6,6 +6,7 @@ import java.awt.*;
 public class SignalPanel extends JPanel {
     private double[] data;
     private String title; // グリッド番号からタイトルに変更
+    private double fixedMaxValue = -1;
 
     // コンストラクタ：初期データはnullでも可
     public SignalPanel(String title) {
@@ -23,6 +24,14 @@ public class SignalPanel extends JPanel {
         repaint(); // データが設定されたら再描画をトリガー
     }
 
+    /**
+     * グラフのY軸の最大値を固定します。
+     * @param max 固定したい最大値
+     */
+    public void setFixedMaxValue(double max) {
+        this.fixedMaxValue = (max > 0) ? max : 1.0; // 0や負の数が設定されるのを防ぐ
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -33,21 +42,26 @@ public class SignalPanel extends JPanel {
         g2.setColor(Color.BLACK);
         g2.drawString(title, 10, 15);
 
-        // 信号データがなければ終了
         if (data == null || data.length == 0) return;
 
         int w = getWidth();
         int h = getHeight();
 
-        // X軸（中央線）
         g2.setColor(Color.LIGHT_GRAY);
         g2.drawLine(0, h / 2, w, h / 2);
 
-        // 信号の最大絶対値を求めてスケーリング
-        double max = 0.0;
-        for (double v : data) {
-            if (Math.abs(v) > max) {
-                max = Math.abs(v);
+        // 信号データがなければ終了
+        double max;
+        // fixedMaxValueが設定されていれば、それを使用する
+        if (this.fixedMaxValue > 0) {
+            max = this.fixedMaxValue;
+        } else {
+            // 設定されていなければ、従来通りデータから最大値を計算
+            max = 0.0;
+            for (double v : data) {
+                if (Math.abs(v) > max) {
+                    max = Math.abs(v);
+                }
             }
         }
         if (max == 0) max = 1.0; // ゼロ除算を避ける

@@ -10,6 +10,27 @@ import javax.imageio.ImageIO;
 public class FileIO {
 
     /**
+     * ファイルを自動判別して読み込みます。
+     * 拡張子に基づいて、CSVファイルなら1次元データ、画像ファイルなら2次元データとして読み込みます。
+     * @param filePath 読み込むファイルのリソースパス、または絶対パス
+     * @return Object型の結果（double[]またはdouble[][][]）。判別できない場合はnull
+     */
+    public static Object readSignalFromFile(String filePath) {
+        String lowerPath = filePath.toLowerCase();
+        
+        // 画像ファイルの場合
+        if (lowerPath.endsWith(".jpg") || lowerPath.endsWith(".jpeg") || 
+            lowerPath.endsWith(".png") || lowerPath.endsWith(".bmp") || 
+            lowerPath.endsWith(".gif")) {
+            return readSignalFromImage(filePath);
+        }
+        // CSVファイルまたは不明な拡張子の場合、1次元データとして試行
+        else {
+            return readSignalFromCSV(filePath);
+        }
+    }
+
+    /**
      * CSVファイルから1次元信号を読み込みます。
      * クラスパスリソース、ファイルシステム上の絶対パスの両方に対応します。
      * @param filePath 読み込むCSVファイルのリソースパス、または絶対パス
@@ -44,7 +65,12 @@ public class FileIO {
             return null;
         }
 
-        return signalList.stream().mapToDouble(Double::doubleValue).toArray();
+        double[] result = signalList.stream().mapToDouble(Double::doubleValue).toArray();
+        System.out.println("CSV読み込み完了: " + result.length + "個のデータ");
+        if (result.length > 0) {
+            System.out.println("最初の値: " + result[0] + ", 最後の値: " + result[result.length-1]);
+        }
+        return result;
     }
 
     /**
@@ -97,6 +123,15 @@ public class FileIO {
      * 1次元データを保存
      */
     public static void writeSignalToCSV (double[] signalData, String filePath) { //ファイルの保存先の指定はメニューが行う予定
+        if (signalData == null || signalData.length == 0) {
+            System.err.println("writeSignalToCSV: データが空またはnullです。");
+            return;
+        }
+        
+        // 拡張子がない場合は.csvを追加
+        if (!filePath.toLowerCase().endsWith(".csv")) {
+            filePath += ".csv";
+        }
         File csvFile = new File(filePath);
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(csvFile))) {
             for (double value : signalData) {
@@ -114,6 +149,10 @@ public class FileIO {
      * 2次元データを保存
      */
     public static void writeSignalToImage (double[][][] imageData, String filePath) {
+        // 拡張子がない場合は.pngを追加
+        if (!hasImageExtension(filePath)) {
+            filePath += ".png";
+        }
         File imageFile = new File(filePath);
         int width = imageData.length;
         int height = imageData[0].length;
@@ -145,6 +184,16 @@ public class FileIO {
     } 
 
     /**
+     * ファイルパスが画像の拡張子を持っているかチェック
+     */
+    private static boolean hasImageExtension(String filePath) {
+        String name = filePath.toLowerCase();
+        return name.endsWith(".jpg") || name.endsWith(".jpeg") || 
+               name.endsWith(".png") || name.endsWith(".bmp") || 
+               name.endsWith(".gif");
+    }
+
+    /**
      * 画像ファイルの拡張子を取得
      * 対応していない拡張子の場合はnullを返す
      * 対応拡張子: jpg(jpeg), png, bmp, gif
@@ -156,7 +205,30 @@ public class FileIO {
         else if (name.endsWith(".bmp")) return "bmp";
         else if (name.endsWith(".gif")) return "gif";
         else return null;
+    } 
+
+    /**
+     * ファイルの拡張子から適切なデータ次元を判定します。
+     * @param filePath ファイルパス
+     * @return 1: 1次元データ（CSV等）, 2: 2次元データ（画像ファイル）, 0: 判定不可
+     */
+    public static int getRecommendedDimension(String filePath) {
+        String lowerPath = filePath.toLowerCase();
+        
+        // 画像ファイルの場合は2次元
+        if (lowerPath.endsWith(".jpg") || lowerPath.endsWith(".jpeg") || 
+            lowerPath.endsWith(".png") || lowerPath.endsWith(".bmp") || 
+            lowerPath.endsWith(".gif")) {
+            return 2;
+        }
+        // CSVファイルまたは不明な拡張子の場合は1次元
+        else if (lowerPath.endsWith(".csv") || lowerPath.endsWith(".txt")) {
+            return 1;
+        }
+        // その他のファイルは1次元として扱う（デフォルト）
+        else {
+            return 1;
+        }
     }
-    
-}    
-    
+
+}
