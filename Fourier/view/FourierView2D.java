@@ -1,5 +1,6 @@
 package Fourier.view;
 
+import Fourier.model.FourierModel;
 import Fourier.model.FourierModel2D;
 import javax.swing.*;
 import java.awt.*;
@@ -20,11 +21,10 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
     private double initialSpectrumLogMin;
     private double initialSpectrumLogMax;
 
-    // --- コンストラクタを簡素化 ---
+    // --- コンストラクタ ---
     public FourierView2D(FourierModel2D model, int creationIndex) {
         super(model, "2D Fourier Transform - Spectrum Manipulation");
         
-        // パネルの生成と追加
         addPanel(KEY_ORIGINAL_IMAGE, new ImagePanel(KEY_ORIGINAL_IMAGE));
         addPanel(KEY_ORIGINAL_SPECTRUM, new ImagePanel(KEY_ORIGINAL_SPECTRUM));
         addPanel(KEY_RECONSTRUCTED_IMAGE, new ImagePanel(KEY_RECONSTRUCTED_IMAGE));
@@ -37,7 +37,6 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         int offset = creationIndex * 30;
         frame.setLocation(offset, offset);
 
-        // コンポーネントに基づいてフレームサイズを自動調整
         frame.pack();
         setVisible(true);
     }
@@ -54,7 +53,8 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
 
         ((ImagePanel) panels.get(KEY_RECONSTRUCTED_IMAGE)).setData(model2D.getIfftResultColorData());
 
-        double[][] modifiedSpectrumData = model2D.getRecalculatedPowerSpectrumData();
+        // [変更点] モデルの最新の状態から都度スペクトルを計算・取得する（重い処理）
+        double[][] modifiedSpectrumData = model2D.generateCurrentPowerSpectrum();
         double[][][] modifiedSpectrumAsColor = convertGrayDataToColorDataWithFixedRange(modifiedSpectrumData, true);
         ((ImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setData(modifiedSpectrumAsColor);
     }
@@ -91,14 +91,7 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         }
         return colorData;
     }
-
-    /**
-     * グレースケールデータを、クラスに保存された固定の輝度範囲（元のスペクトルのmin/max）を
-     * 使って正規化し、カラースデータに変換します。
-     * @param grayData グレースケールデータ
-     * @param useLogScale 対数スケールを使用するかどうか
-     * @return 変換後のカラーデータ
-     */
+    
     private double[][][] convertGrayDataToColorDataWithFixedRange(double[][] grayData, boolean useLogScale) {
         if (grayData == null || grayData.length == 0) return null;
 
@@ -106,7 +99,6 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         int width = grayData[0].length;
         double[][][] colorData = new double[width][height][3];
 
-        // インスタンス変数として保持している固定のmin/maxを使用
         double min = this.initialSpectrumLogMin;
         double max = this.initialSpectrumLogMax;
         
@@ -117,10 +109,7 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
             for (int x = 0; x < width; x++) {
                 double val = useLogScale ? Math.log1p(grayData[y][x]) : grayData[y][x];
                 
-                // 保存しておいた範囲を使って正規化
                 double normalizedValue = 255 * (val - min) / range;
-                
-                // 0-255の範囲に値をクリップ
                 normalizedValue = Math.max(0, Math.min(255, normalizedValue));
                 
                 colorData[x][y][0] = normalizedValue;
@@ -131,10 +120,13 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         return colorData;
     }
 
+
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        super.propertyChange(evt); // updateViewを呼び出す
+        // [変更点] シンプルな全体更新に戻す
+        super.propertyChange(evt);
 
+        // テキスト情報の更新
         String propertyName = evt.getPropertyName();
         if (propertyName.equals("calculationPoint") || propertyName.equals("altKeyState")) {
             FourierModel2D model2D = (FourierModel2D) getModel();
@@ -147,10 +139,6 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         }
     }
 
-    /**
-     * 3チャンネルのカラーデータを画像として表示するパネル。
-     * グレースケール専用の処理は削除されています。
-     */
     protected class ImagePanel extends SignalPanel {
         private BufferedImage image;
 
@@ -159,18 +147,11 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
             this.setPreferredSize(new Dimension(PANEL_WIDTH, PANEL_HEIGHT));
         }
 
-        /**
-         * カラーデータを設定し、パネルを再描画します。
-         * @param colorData [width][height][channel] のデータ (0:R, 1:G, 2:B)
-         */
         public void setData(double[][][] colorData) {
             this.image = (colorData == null) ? null : convertToImage(colorData);
             repaint();
         }
-
-        /**
-         * カラーデータ(double[][][])をBufferedImageに変換します。
-         */
+        
         private BufferedImage convertToImage(double[][][] data) {
             int width = data.length;
             int height = data[0].length;
@@ -178,7 +159,6 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
 
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
-                    // 各チャンネルの値を0-255の範囲にクリップしてピクセル値を生成
                     int r = (int) Math.max(0, Math.min(255, data[x][y][0]));
                     int g = (int) Math.max(0, Math.min(255, data[x][y][1]));
                     int b = (int) Math.max(0, Math.min(255, data[x][y][2]));
@@ -198,9 +178,6 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         }
     }
 
-    /**
-     * マウス情報を表示する機能を追加したImagePanel。
-     */
     private class InfoImagePanel extends ImagePanel {
         private Point calculationPoint;
         private boolean altPressed;
@@ -212,12 +189,14 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         public void setCalculationInfo(Point point, boolean alt) {
             this.calculationPoint = point;
             this.altPressed = alt;
-            repaint();
+            // [変更点] ここでrepaintを呼ばなくてもpropertyChangeで全体が更新されるので不要
         }
 
         @Override
         protected void paintComponent(Graphics g) {
+            // [変更点] プレビューカーソルの描画ロジックを削除
             super.paintComponent(g);
+            
             if (calculationPoint != null) {
                 g.setColor(Color.RED);
                 g.setFont(new Font("Monospaced", Font.BOLD, 14));
@@ -228,17 +207,12 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
             }
         }
     }
-
-    /**
-     * 元の画像のパワースペクトルから、対数スケールでの輝度の最小値と最大値を計算し、
-     * インスタンス変数に保存します。この処理は一度だけ呼び出されます。
-     * @param model データモデル
-     */
+    
     private void calculateAndStoreInitialSpectrumRange(FourierModel2D model) {
         double[][] initialSpectrum = model.getInitialPowerSpectrumData();
         if (initialSpectrum == null || initialSpectrum.length == 0) {
             this.initialSpectrumLogMin = 0.0;
-            this.initialSpectrumLogMax = 1.0; // デフォルト値
+            this.initialSpectrumLogMax = 1.0;
             return;
         }
 
@@ -247,7 +221,6 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
 
         for (int y = 0; y < initialSpectrum.length; y++) {
             for (int x = 0; x < initialSpectrum[0].length; x++) {
-                // スペクトル表示は常に対数スケールで行う
                 double logVal = Math.log1p(initialSpectrum[y][x]);
                 if (logVal > maxVal) maxVal = logVal;
                 if (logVal < minVal) minVal = logVal;

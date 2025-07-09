@@ -1,10 +1,7 @@
 package Fourier;
 
-import Fourier.model.FourierModel1D; // bitReverseなどのヘルパーメソッドのためにインポート
-
 public class FFTUtil {
 
-    // bitReverseは静的メソッドとしてFFTUtilに含める
     public static int bitReverse(int x, int bits) {
         int y = 0;
         for (int i = 0; i < bits; i++) {
@@ -14,9 +11,8 @@ public class FFTUtil {
         return y;
     }
 
-    // bitReverseReorderは静的メソッドとしてFFTUtilに含める
     public static void bitReverseReorder(Complex[] data) {
-        Integer N = data.length;
+        int N = data.length;
         int bits = Integer.numberOfTrailingZeros(N);
         for (int i = 0; i < N; i++) {
             int j = bitReverse(i, bits);
@@ -28,45 +24,75 @@ public class FFTUtil {
         }
     }
 
-    // FFTは静的メソッドとしてFFTUtilに含める
-    public static void fft(Complex[] data, int start, int n) {
+    /**
+     * [高速化] FFTメソッド
+     * - 事前計算された回転因子(twiddles)テーブルを使用
+     * - ミュータブルなComplexオブジェクトでインプレース計算を行い、オブジェクト生成を回避
+     */
+    public static void fftRecursive(Complex[] data, int start, int n, Complex[] twiddles) {
         if (n == 1) return;
         int half = n / 2;
+        int stride = twiddles.length * 2 / n; // 再帰の深さに応じたストライドを計算
+
         for (int k = 0; k < half; k++) {
             int i = start + k;
             int j = i + half;
-            double angle = -2 * Math.PI * k / n;
-            Complex w = new Complex(Math.cos(angle), Math.sin(angle));
-            Complex t = data[j];
+            
+            // [高速化] 事前計算した回転因子テーブルを使用
+            Complex w = twiddles[k * stride];
+            
             Complex u = data[i];
-            data[i] = u.add(t);
-            data[j] = w.mul(u.sub(t));
+            Complex t = data[j];
+
+            // [高速化] ミュータブルなComplexメソッドを使用してオブジェクト生成を回避
+            // バタフライ演算:
+            // data[i] = u + t
+            // data[j] = w * (u - t)
+            double u_real = u.getReal();
+            double u_imag = u.getImaginary();
+            double t_real = t.getReal();
+            double t_imag = t.getImaginary();
+
+            double diff_real = u_real - t_real;
+            double diff_imag = u_imag - t_imag;
+
+            // data[i]の更新
+            u.set(u_real + t_real, u_imag + t_imag);
+            
+            // data[j]の更新 (w * diff)
+            t.set(
+                w.getReal() * diff_real - w.getImaginary() * diff_imag,
+                w.getReal() * diff_imag + w.getImaginary() * diff_real
+            );
         }
-        fft(data, start, half);
-        fft(data, start + half, half);
+        fftRecursive(data, start, half, twiddles);
+        fftRecursive(data, start + half, half, twiddles);
     }
-
-    // IFFTは静的メソッドとしてFFTUtilに含める
-    public static void ifft(Complex[] data) {
-        // 共役複素数化
-        for (int i = 0; i < data.length; i++) {
-            data[i] = data[i].conjugate();
-        }
-
-        // FFTを実行
-        fft(data, 0, data.length);
+    
+    // 順変換FFTの呼び出し用ラッパー
+    public static void fft(Complex[] data, Complex[] twiddles) {
+        fftRecursive(data, 0, data.length, twiddles);
         bitReverseReorder(data);
-
-        // 再び共役複素数化して正規化
-        for (int i = 0; i < data.length; i++) {
-            data[i] = data[i].conjugate().scale(1.0 / data.length);
-        }
     }
 
     /**
-     * 1次元配列のFFT結果をシフトし、直流成分が中央に来るように並べ替える
-     * @param data シフト対象の配列
+     * [高速化] IFFTメソッド
+     * - 共役化ループを廃止し、逆回転因子で直接計算
+     * - 最後にデータ数でスケーリング
      */
+    public static void ifft(Complex[] data, Complex[] invTwiddles) {
+        // 逆変換は、順変換と同じアルゴリズムで逆回転因子を使うだけ
+        fftRecursive(data, 0, data.length, invTwiddles);
+        bitReverseReorder(data);
+
+        // 最後にデータ数でスケーリング
+        double scale = 1.0 / data.length;
+        for (int i = 0; i < data.length; i++) {
+            data[i].scaleInPlace(scale);
+        }
+    }
+
+    // --- Shift methods (変更なし) ---
     public static void shift(double[] data) {
         int half = data.length / 2;
         for (int i = 0; i < half; i++) {
@@ -76,10 +102,6 @@ public class FFTUtil {
         }
     }
     
-    /**
-     * 1次元配列のFFT結果をシフトし、直流成分が中央に来るように並べ替える
-     * @param data シフト対象の配列
-     */
     public static void shift(Complex[] data) {
         int half = data.length / 2;
         for (int i = 0; i < half; i++) {
@@ -89,24 +111,16 @@ public class FFTUtil {
         }
     }
 
-    /**
-     * 2次元配列のFFT結果をシフトし、直流成分が中央に来るように象限を入れ替える
-     * @param data シフト対象の配列
-     */
     public static void shift(double[][] data) {
         int rows = data.length;
         int cols = data[0].length;
         int halfRows = rows / 2;
         int halfCols = cols / 2;
-
         for (int r = 0; r < halfRows; r++) {
             for (int c = 0; c < halfCols; c++) {
-                // 第1象限(左上)と第3象限(右下)を交換
                 double temp = data[r][c];
                 data[r][c] = data[r + halfRows][c + halfCols];
                 data[r + halfRows][c + halfCols] = temp;
-
-                // 第2象限(右上)と第4象限(左下)を交換
                 temp = data[r][c + halfCols];
                 data[r][c + halfCols] = data[r + halfRows][c];
                 data[r + halfRows][c] = temp;
@@ -114,24 +128,16 @@ public class FFTUtil {
         }
     }
     
-    /**
-     * 2次元配列のFFT結果をシフトし、直流成分が中央に来るように象限を入れ替える
-     * @param data シフト対象の配列
-     */
     public static void shift(Complex[][] data) {
         int rows = data.length;
         int cols = data[0].length;
         int halfRows = rows / 2;
         int halfCols = cols / 2;
-
         for (int r = 0; r < halfRows; r++) {
             for (int c = 0; c < halfCols; c++) {
-                // 第1象限(左上)と第3象限(右下)を交換
                 Complex temp = data[r][c];
                 data[r][c] = data[r + halfRows][c + halfCols];
                 data[r + halfRows][c + halfCols] = temp;
-
-                // 第2象限(右上)と第4象限(左下)を交換
                 temp = data[r][c + halfCols];
                 data[r][c + halfCols] = data[r + halfRows][c];
                 data[r + halfRows][c] = temp;
