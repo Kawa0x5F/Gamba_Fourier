@@ -14,9 +14,11 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
     private static final String KEY_ORIGINAL_SPECTRUM = "Original Power Spectrum (Log Scale)";
     private static final String KEY_RECONSTRUCTED_IMAGE = "Reconstructed Image";
     private static final String KEY_MODIFIED_SPECTRUM = "User Modified Power Spectrum (Log Scale)";
-
-    public static final int PANEL_WIDTH = 400;
-    public static final int PANEL_HEIGHT = 400;
+    
+    private int imageWidth;
+    private int imageHeight;
+    private int displayWidth;
+    private int displayHeight;
 
     private double initialSpectrumLogMin;
     private double initialSpectrumLogMax;
@@ -24,6 +26,15 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
     // --- コンストラクタ ---
     public FourierView2D(FourierModel2D model, int creationIndex) {
         super(model, "2D Fourier Transform - Spectrum Manipulation");
+        
+        // 画像サイズを取得して表示サイズを計算
+        double[][][] initialColorData = model.getInitialOriginColorData();
+        this.imageWidth = initialColorData.length;
+        this.imageHeight = initialColorData[0].length;
+        calculateDisplaySize();
+        
+        // モデルに表示サイズを設定
+        model.setDisplaySize(displayWidth, displayHeight);
         
         addPanel(KEY_ORIGINAL_IMAGE, new ImagePanel(KEY_ORIGINAL_IMAGE));
         addPanel(KEY_ORIGINAL_SPECTRUM, new ImagePanel(KEY_ORIGINAL_SPECTRUM));
@@ -144,7 +155,7 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
 
         public ImagePanel(String title) {
             super(title);
-            this.setPreferredSize(new Dimension(PANEL_WIDTH, PANEL_HEIGHT));
+            this.setPreferredSize(new Dimension(displayWidth, displayHeight));
         }
 
         public void setData(double[][][] colorData) {
@@ -173,7 +184,25 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (image != null) {
-                g.drawImage(image, 0, 0, this.getWidth(), this.getHeight(), null);
+                // 縦横比を保って中央に描画
+                int panelWidth = this.getWidth();
+                int panelHeight = this.getHeight();
+                int imgWidth = image.getWidth();
+                int imgHeight = image.getHeight();
+                
+                // 縦横比を保ったサイズを計算
+                double scaleX = (double) panelWidth / imgWidth;
+                double scaleY = (double) panelHeight / imgHeight;
+                double scale = Math.min(scaleX, scaleY);
+                
+                int drawWidth = (int) (imgWidth * scale);
+                int drawHeight = (int) (imgHeight * scale);
+                
+                // 中央に配置するためのオフセットを計算
+                int x = (panelWidth - drawWidth) / 2;
+                int y = (panelHeight - drawHeight) / 2;
+                
+                g.drawImage(image, x, y, drawWidth, drawHeight, null);
             }
         }
     }
@@ -228,5 +257,30 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
         }
         this.initialSpectrumLogMin = minVal;
         this.initialSpectrumLogMax = maxVal;
+    }
+    
+    /**
+     * 画像サイズに基づいて適切な表示サイズを計算する
+     */
+    private void calculateDisplaySize() {
+        // 最大表示サイズを設定（画面サイズを考慮）
+        int maxDisplaySize = 300;
+        
+        // 縦横比を保ちながら適切なサイズを計算
+        double aspectRatio = (double) imageWidth / imageHeight;
+        
+        if (aspectRatio >= 1.0) {
+            // 横長または正方形の場合
+            this.displayWidth = Math.min(maxDisplaySize, imageWidth);
+            this.displayHeight = (int) (displayWidth / aspectRatio);
+        } else {
+            // 縦長の場合
+            this.displayHeight = Math.min(maxDisplaySize, imageHeight);
+            this.displayWidth = (int) (displayHeight * aspectRatio);
+        }
+        
+        // 最小サイズを保証
+        this.displayWidth = Math.max(this.displayWidth, 150);
+        this.displayHeight = Math.max(this.displayHeight, 150);
     }
 }

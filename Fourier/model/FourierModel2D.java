@@ -31,6 +31,10 @@ public class FourierModel2D extends FourierModel {
 
     // [高速化] IFFT計算用の作業用バッファを追加
     private Complex[][] ifftWorkspace_R, ifftWorkspace_G, ifftWorkspace_B;
+    
+    // 表示サイズ情報
+    private int displayWidth = 400;  // デフォルト値
+    private int displayHeight = 400; // デフォルト値
 
     // --- コンストラクタ ---
     public FourierModel2D(double[][][] initialColorData) {
@@ -117,6 +121,46 @@ public class FourierModel2D extends FourierModel {
     }
     
     // --- メインロジック ---
+    
+    /**
+     * 表示サイズを設定する
+     */
+    public void setDisplaySize(int width, int height) {
+        this.displayWidth = width;
+        this.displayHeight = height;
+    }
+    
+    /**
+     * マウス座標を画像座標に変換する
+     */
+    private Point convertMouseToImageCoordinates(Point mousePoint) {
+        // 縦横比を保った描画でのマウス座標変換
+        double scaleX = (double) displayWidth / userModifiedSpectrumData_R[0].length;
+        double scaleY = (double) displayHeight / userModifiedSpectrumData_R.length;
+        double scale = Math.min(scaleX, scaleY);
+        
+        int drawWidth = (int) (userModifiedSpectrumData_R[0].length * scale);
+        int drawHeight = (int) (userModifiedSpectrumData_R.length * scale);
+        
+        int offsetX = (displayWidth - drawWidth) / 2;
+        int offsetY = (displayHeight - drawHeight) / 2;
+        
+        // オフセットを考慮したマウス座標
+        int adjustedX = mousePoint.x - offsetX;
+        int adjustedY = mousePoint.y - offsetY;
+        
+        // 画像領域外の場合は元の座標をそのまま返す
+        if (adjustedX < 0 || adjustedY < 0 || adjustedX >= drawWidth || adjustedY >= drawHeight) {
+            return mousePoint;
+        }
+        
+        // スケールを戻して画像座標に変換
+        int imageX = (int) (adjustedX / scale);
+        int imageY = (int) (adjustedY / scale);
+        
+        return new Point(imageX, imageY);
+    }
+    
     @Override
     public void computeFromMousePoint(Point point, Boolean isAltDown) {
         updateUserSpectrumAndRequestRepaint(point, isAltDown);
@@ -128,10 +172,13 @@ public class FourierModel2D extends FourierModel {
         this.lastCalculationPoint = point;
         this.isAltDown = isAltDown;
 
+        // マウス座標を画像座標に変換
+        Point imagePoint = convertMouseToImageCoordinates(point);
+
         int rows = userModifiedSpectrumData_R.length;
         int cols = userModifiedSpectrumData_R[0].length;
-        int centerCol = (int) (point.getX() * cols / FourierView2D.PANEL_WIDTH);
-        int centerRow = (int) (point.getY() * rows / FourierView2D.PANEL_HEIGHT);
+        int centerCol = imagePoint.x;
+        int centerRow = imagePoint.y;
         double radiusSquared = brushSize * brushSize;
 
         for (int r = centerRow - brushSize; r <= centerRow + brushSize; r++) {
