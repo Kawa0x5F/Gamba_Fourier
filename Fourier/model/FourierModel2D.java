@@ -88,12 +88,13 @@ public class FourierModel2D extends FourierModel {
 
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
+                // 初期値は0で初期化（ユーザーが編集していない状態）
                 Complex zero = new Complex(0.0, 0.0);
                 this.userModifiedSpectrumData_R[i][j] = zero;
                 this.userModifiedSpectrumData_G[i][j] = new Complex(0,0);
                 this.userModifiedSpectrumData_B[i][j] = new Complex(0,0);
                 
-                // 作業用バッファも初期化
+                // 作業用バッファも0で初期化
                 this.ifftWorkspace_R[i][j] = new Complex(0,0);
                 this.ifftWorkspace_G[i][j] = new Complex(0,0);
                 this.ifftWorkspace_B[i][j] = new Complex(0,0);

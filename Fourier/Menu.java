@@ -79,24 +79,27 @@ public class Menu {
 
     /**
      * ファイルを開く処理を実行します。
-     * 選択されたファイルに応じて、1Dまたは2Dのデモを再起動します。
+     * ファイルの拡張子に応じて、適切な次元のデモを起動します。
      * @param parent ダイアログの親コンポーネント
      */
     private void handleOpenFile(Component parent) {
         String path = getOpenFilePath(parent);
         if (path == null) return;
 
-        if (model instanceof FourierModel1D) {
-            double[] data = FileIO.readSignalFromCSV(path);
-            if (data != null) {
-                // Exampleクラスに新しいデータで1Dデモを再起動するように依頼
-                Example.restart1DDemoWithData(data);
-            }
-        } else if (model instanceof FourierModel2D) {
+        // ファイルの拡張子から適切な次元を判定
+        int recommendedDimension = FileIO.getRecommendedDimension(path);
+        
+        if (recommendedDimension == 2) {
+            // 画像ファイルの場合は2次元デモを起動
             double[][][] colorData = FileIO.readSignalFromImage(path);
             if (colorData != null) {
-                // Exampleクラスの再起動メソッドを呼び出す
                 Example.restart2DDemoWithData(colorData);
+            }
+        } else {
+            // CSVファイルなどの場合は1次元デモを起動
+            double[] data = FileIO.readSignalFromCSV(path);
+            if (data != null) {
+                Example.restart1DDemoWithData(data);
             }
         }
     }
@@ -111,18 +114,20 @@ public class Menu {
 
         if (model instanceof FourierModel1D) {
             double[] signal = ((FourierModel1D) model).getIfftResultData();
-            if (signal != null) {
+            if (signal != null && signal.length > 0) {
                 FileIO.writeSignalToCSV(signal, path);
+                JOptionPane.showMessageDialog(parent, "1次元データの保存が完了しました。", "保存完了", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(parent, "保存するデータがありません。信号を処理してから保存してください。", "保存エラー", JOptionPane.WARNING_MESSAGE);
             }
         } else if (model instanceof FourierModel2D) {
-            // *************** ここから修正 ***************
             // Modelから再構成されたカラー画像(IFFT結果)を直接取得
             double[][][] colorData = ((FourierModel2D) model).getIfftResultColorData();
             if (colorData != null) {
                 // 変換は不要。そのまま保存メソッドに渡す
                 FileIO.writeSignalToImage(colorData, path);
+                JOptionPane.showMessageDialog(parent, "画像データの保存が完了しました。", "保存完了", JOptionPane.INFORMATION_MESSAGE);
             }
-            // *************** ここまで修正 ***************
         }
     }
 
@@ -133,6 +138,48 @@ public class Menu {
      */
     public static String getOpenFilePath(Component parent) {
         JFileChooser chooser = new JFileChooser();
+        
+        // ファイルフィルターを追加
+        chooser.addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(java.io.File f) {
+                if (f.isDirectory()) return true;
+                String name = f.getName().toLowerCase();
+                return name.endsWith(".csv");
+            }
+            @Override
+            public String getDescription() {
+                return "CSV Files (*.csv)";
+            }
+        });
+
+        chooser.addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(java.io.File f) {
+                if (f.isDirectory()) return true;
+                String name = f.getName().toLowerCase();
+                return name.endsWith(".jpg") || name.endsWith(".jpeg") || 
+                       name.endsWith(".png") || name.endsWith(".bmp") || 
+                       name.endsWith(".gif");
+            }
+            @Override
+            public String getDescription() {
+                return "Image Files (*.jpg, *.png, *.bmp, *.gif)";
+            }
+        });
+        
+        // 全てのファイルフィルターを追加
+        chooser.addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(java.io.File f) {
+                return true;
+            }
+            @Override
+            public String getDescription() {
+                return "All Files (*.*)";
+            }
+        });
+        
         if (chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
             return chooser.getSelectedFile().getAbsolutePath();
         }
@@ -146,6 +193,37 @@ public class Menu {
      */
     public static String getSaveFilePath(Component parent) {
         JFileChooser chooser = new JFileChooser();
+        
+        // CSVファイルフィルター
+        chooser.addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(java.io.File f) {
+                if (f.isDirectory()) return true;
+                String name = f.getName().toLowerCase();
+                return name.endsWith(".csv");
+            }
+            @Override
+            public String getDescription() {
+                return "CSV Files (*.csv)";
+            }
+        });
+        
+        // 画像ファイルフィルター
+        chooser.addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(java.io.File f) {
+                if (f.isDirectory()) return true;
+                String name = f.getName().toLowerCase();
+                return name.endsWith(".jpg") || name.endsWith(".jpeg") || 
+                       name.endsWith(".png") || name.endsWith(".bmp") || 
+                       name.endsWith(".gif");
+            }
+            @Override
+            public String getDescription() {
+                return "Image Files (*.jpg, *.png, *.bmp, *.gif)";
+            }
+        });
+        
         if (chooser.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) {
             return chooser.getSelectedFile().getAbsolutePath();
         }

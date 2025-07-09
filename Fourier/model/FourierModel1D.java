@@ -48,6 +48,14 @@ public class FourierModel1D extends FourierModel {
         int N = initialData.length;
         if ((N & (N - 1)) != 0) {
             System.err.println("Model1D: Initial FFT input size is not a power of 2: " + N);
+            // エラー時でも最低限の初期化を行う
+            this.initialCalculatedPowerSpectrumData = new double[0];
+            this.recalculatedPowerSpectrumData = new double[0];
+            this.ifftResultData = new double[0];
+            this.userModifiedSpectrumData = new Complex[0];
+            this.initialComplexDataForFFT = new Complex[0];
+            this.twiddles = new Complex[0];
+            this.invTwiddles = new Complex[0];
             return;
         }
 
@@ -71,11 +79,21 @@ public class FourierModel1D extends FourierModel {
 
         this.userModifiedSpectrumData = new Complex[N];
         for (int i = 0; i < N; i++) {
+            // 初期値は0で初期化（ユーザーが編集していない状態）
             this.userModifiedSpectrumData[i] = new Complex(0.0, 0.0);
         }
         
-        recalculateSpectrumFromUserModifiedData();
-        performIfftAndNotify();
+        // 初期化時は逆変換結果を元データに設定（変換処理は行わない）
+        this.ifftResultData = initialData.clone();
+        
+        // 初期化時のrecalculatedPowerSpectrumDataは0で初期化（ユーザーがまだ何も編集していない状態）
+        this.recalculatedPowerSpectrumData = new double[N];
+        // 配列はデフォルトで0で初期化される
+        
+        // 初期化完了を通知（ビューの初期表示のため）
+        firePropertyChange("recalculatedPowerSpectrumData", null, this.recalculatedPowerSpectrumData);
+        firePropertyChange("userModifiedSpectrumData", null, this.userModifiedSpectrumData);
+        firePropertyChange("ifftResultData", null, this.ifftResultData);
         
         // タイマーを開始
         periodicTimer.start();
