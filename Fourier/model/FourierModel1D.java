@@ -12,7 +12,12 @@ import Fourier.view.FourierView1D;
 
 public class FourierModel1D extends FourierModel {
 
-    private double[] initialOriginData; 
+
+    // 1. オリジナルの波形データ（変更不可）
+    private double[] initialOriginData;
+    
+    // 2. 最初にinitialOriginDataから計算されたFFTスペクトル (シフトなし)
+
     private Complex[] initialComplexDataForFFT; 
     private Complex[] userModifiedSpectrumData; 
     private double[] initialCalculatedPowerSpectrumData;
@@ -201,111 +206,5 @@ public class FourierModel1D extends FourierModel {
         this.ifftResultData = newIfftResultData;
 
         firePropertyChange("ifftResultData", null, this.ifftResultData);
-    }
-
-    /**
-     * [並行処理] ワーカースレッド用のパワースペクトル計算メソッド
-     * @return 計算結果のパワースペクトル配列
-     */
-    private double[] calculatePowerSpectrumFromUserModifiedDataForWorker() {
-        if (this.userModifiedSpectrumData == null || this.userModifiedSpectrumData.length == 0) {
-            return new double[0];
-        }
-        // calculatePowerSpectrumFromFFTResultは計算のみ行うのでそのまま使える
-        return calculatePowerSpectrumFromFFTResult(this.userModifiedSpectrumData);
-    }
-
-    /**
-     * [並行処理] ワーカースレッド用のIFFT実行メソッド
-     * @return 計算結果のIFFT波形配列
-     */
-    private double[] performIfftForWorker() {
-        if (this.userModifiedSpectrumData == null || this.userModifiedSpectrumData.length == 0) {
-            return new double[0];
-        }
-        
-        // IFFTはデータを破壊するため、コピーして渡す
-        Complex[] ifftInput = new Complex[userModifiedSpectrumData.length];
-        for (int i = 0; i < userModifiedSpectrumData.length; i++) {
-            ifftInput[i] = new Complex(userModifiedSpectrumData[i].getReal(), userModifiedSpectrumData[i].getImaginary());
-        }
-
-        FFTUtil.ifft(ifftInput, this.invTwiddles);
-        
-        double[] newIfftResultData = new double[ifftInput.length];
-        for (int i = 0; i < ifftInput.length; i++) {
-            newIfftResultData[i] = ifftInput[i].getReal();
-        }
-        return newIfftResultData;
-    }
-
-
-    /**
-     * ユーザーが操作するスペクトルデータをすべてゼロ（クリア）にします。
-     */
-    public void clearUserSpectrum() {
-        if (this.userModifiedSpectrumData == null) return;
-
-        if (periodicTimer != null) {
-            periodicTimer.stop();
-        }
-        hasPendingCalculation = false;
-        
-        Complex zero = new Complex(0.0, 0.0);
-        for (int i = 0; i < this.userModifiedSpectrumData.length; i++) {
-            this.userModifiedSpectrumData[i] = zero;
-        }
-
-        // 変更をビューに反映させるために、関連する計算を実行し通知する
-        recalculateSpectrumFromUserModifiedData();
-        performIfftAndNotify();
-        if (periodicTimer != null) {
-            periodicTimer.start();
-        }
-    }
-
-    /**
-     * ユーザーが操作するスペクトルデータを、最初に計算されたスペクトルデータですべて置き換えます（フィル）。
-     */
-    public void fillUserSpectrum() {
-        if (this.userModifiedSpectrumData == null || this.initialComplexDataForFFT == null) return;
-        if (this.userModifiedSpectrumData.length != this.initialComplexDataForFFT.length) return;
-
-        if (periodicTimer != null) {
-            periodicTimer.stop();
-        }
-        hasPendingCalculation = false;
-
-        for (int i = 0; i < this.userModifiedSpectrumData.length; i++) {
-            Complex originalSpectrumValue = this.initialComplexDataForFFT[i];
-            // 新しいComplexインスタンスを作成して代入する
-            this.userModifiedSpectrumData[i] = new Complex(originalSpectrumValue.getReal(), originalSpectrumValue.getImaginary());
-        }
-
-        // 変更をビューに反映させるために、関連する計算を実行し通知する
-        recalculateSpectrumFromUserModifiedData();
-        performIfftAndNotify();
-        if (periodicTimer != null) {
-            periodicTimer.start();
-        }
-    }
-    
-    private void submitCalculationTask() {
-        calculationExecutor.submit(() -> {
-            // このブロック内はワーカースレッドで実行される
-            
-            // パワースペクトルの再計算とIFFTを実行
-            double[] recalculatedPower = calculatePowerSpectrumFromUserModifiedDataForWorker();
-            double[] ifftResult = performIfftForWorker();
-
-            // 計算結果をUIスレッドに送ってViewに通知する
-            SwingUtilities.invokeLater(() -> {
-                // このブロック内はUIスレッド(EDT)で安全に実行される
-                this.recalculatedPowerSpectrumData = recalculatedPower;
-                this.ifftResultData = ifftResult;
-                firePropertyChange("recalculatedPowerSpectrumData", null, this.recalculatedPowerSpectrumData);
-                firePropertyChange("ifftResultData", null, this.ifftResultData);
-            });
-        });
     }
 }
