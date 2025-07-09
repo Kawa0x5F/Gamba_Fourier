@@ -161,9 +161,55 @@ public class FourierModel2D extends FourierModel {
         return new Point(imageX, imageY);
     }
     
+    /**
+     * マウス座標を画像座標に変換する（実際のパネルサイズを使用）
+     */
+    private Point convertMouseToImageCoordinates(Point mousePoint, int panelWidth, int panelHeight) {
+        // 画像のサイズ
+        int imgWidth = userModifiedSpectrumData_R[0].length;
+        int imgHeight = userModifiedSpectrumData_R.length;
+        
+        // 縦横比を保った描画でのスケール計算
+        double scaleX = (double) panelWidth / imgWidth;
+        double scaleY = (double) panelHeight / imgHeight;
+        double scale = Math.min(scaleX, scaleY);
+        
+        int drawWidth = (int) (imgWidth * scale);
+        int drawHeight = (int) (imgHeight * scale);
+        
+        int offsetX = (panelWidth - drawWidth) / 2;
+        int offsetY = (panelHeight - drawHeight) / 2;
+        
+        // オフセットを考慮したマウス座標
+        int adjustedX = mousePoint.x - offsetX;
+        int adjustedY = mousePoint.y - offsetY;
+        
+        // 画像領域外の場合は無効な座標を返す
+        if (adjustedX < 0 || adjustedY < 0 || adjustedX >= drawWidth || adjustedY >= drawHeight) {
+            return new Point(-1, -1); // 無効な座標として-1を返す
+        }
+        
+        // スケールを戻して画像座標に変換
+        int imageX = (int) (adjustedX / scale);
+        int imageY = (int) (adjustedY / scale);
+        
+        // 境界チェック
+        imageX = Math.max(0, Math.min(imgWidth - 1, imageX));
+        imageY = Math.max(0, Math.min(imgHeight - 1, imageY));
+        
+        return new Point(imageX, imageY);
+    }
+    
     @Override
     public void computeFromMousePoint(Point point, Boolean isAltDown) {
         updateUserSpectrumAndRequestRepaint(point, isAltDown);
+        // 計算が必要であることをフラグで記録
+        hasPendingCalculation = true;
+    }
+    
+    @Override
+    public void computeFromMousePoint(Point point, Boolean isAltDown, int panelWidth, int panelHeight) {
+        updateUserSpectrumAndRequestRepaint(point, isAltDown, panelWidth, panelHeight);
         // 計算が必要であることをフラグで記録
         hasPendingCalculation = true;
     }
@@ -174,6 +220,52 @@ public class FourierModel2D extends FourierModel {
 
         // マウス座標を画像座標に変換
         Point imagePoint = convertMouseToImageCoordinates(point);
+
+        int rows = userModifiedSpectrumData_R.length;
+        int cols = userModifiedSpectrumData_R[0].length;
+        int centerCol = imagePoint.x;
+        int centerRow = imagePoint.y;
+        double radiusSquared = brushSize * brushSize;
+
+        for (int r = centerRow - brushSize; r <= centerRow + brushSize; r++) {
+            for (int c = centerCol - brushSize; c <= centerCol + brushSize; c++) {
+                if (r >= 0 && r < rows && c >= 0 && c < cols) {
+                    double distanceSquared = Math.pow(c - centerCol, 2) + Math.pow(r - centerRow, 2);
+                    if (distanceSquared <= radiusSquared) {
+                        int unshiftedRow = (r < rows / 2) ? (r + rows / 2) : (r - rows / 2);
+                        int unshiftedCol = (c < cols / 2) ? (c + cols / 2) : (c - cols / 2);
+                        if (isAltDown) {
+                            // [高速化] new Complex()の代わりにset()で値をリセット
+                            userModifiedSpectrumData_R[unshiftedRow][unshiftedCol].set(0, 0);
+                            userModifiedSpectrumData_G[unshiftedRow][unshiftedCol].set(0, 0);
+                            userModifiedSpectrumData_B[unshiftedRow][unshiftedCol].set(0, 0);
+                        } else {
+                            // [高速化] new Complex()の代わりにset()で値をコピー
+                            userModifiedSpectrumData_R[unshiftedRow][unshiftedCol].set(initialComplexData_R[unshiftedRow][unshiftedCol]);
+                            userModifiedSpectrumData_G[unshiftedRow][unshiftedCol].set(initialComplexData_G[unshiftedRow][unshiftedCol]);
+                            userModifiedSpectrumData_B[unshiftedRow][unshiftedCol].set(initialComplexData_B[unshiftedRow][unshiftedCol]);
+                        }
+                    }
+                }
+            }
+        }
+        
+        firePropertyChange("userModifiedSpectrumData", null, null);
+        firePropertyChange("calculationPoint", null, point);
+        firePropertyChange("altKeyState", null, isAltDown);
+    }
+    
+    private void updateUserSpectrumAndRequestRepaint(Point point, Boolean isAltDown, int panelWidth, int panelHeight) {
+        this.lastCalculationPoint = point;
+        this.isAltDown = isAltDown;
+
+        // 実際のパネルサイズを使用して座標変換
+        Point imagePoint = convertMouseToImageCoordinates(point, panelWidth, panelHeight);
+
+        // 無効な座標の場合は処理をスキップ
+        if (imagePoint.x < 0 || imagePoint.y < 0) {
+            return;
+        }
 
         int rows = userModifiedSpectrumData_R.length;
         int cols = userModifiedSpectrumData_R[0].length;

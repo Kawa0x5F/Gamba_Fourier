@@ -39,7 +39,8 @@ public abstract class FourierController extends MouseInputAdapter {
     @Override
     public void mouseClicked(MouseEvent e) {
         if (!SwingUtilities.isRightMouseButton(e)) {
-            model.computeFromMousePoint(e.getPoint(), e.isAltDown());
+            Component source = (Component) e.getSource();
+            model.computeFromMousePoint(e.getPoint(), e.isAltDown(), source.getWidth(), source.getHeight());
         }
     }
 
@@ -55,7 +56,7 @@ public abstract class FourierController extends MouseInputAdapter {
             originalCursor = source.getCursor();
             source.setCursor(CROSSHAIR_CURSOR);
             
-            model.computeFromMousePoint(e.getPoint(), e.isAltDown());
+            model.computeFromMousePoint(e.getPoint(), e.isAltDown(), source.getWidth(), source.getHeight());
         }
     }
 
@@ -84,7 +85,8 @@ public abstract class FourierController extends MouseInputAdapter {
     @Override
     public void mouseDragged(MouseEvent e) {
         if (!SwingUtilities.isRightMouseButton(e)) {
-            model.computeFromMousePoint(e.getPoint(), e.isAltDown());
+            Component source = (Component) e.getSource();
+            model.computeFromMousePoint(e.getPoint(), e.isAltDown(), source.getWidth(), source.getHeight());
         }
     }
 }
