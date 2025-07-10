@@ -17,9 +17,14 @@
 
 	<property name="test.src.dir" value="test" />
 	<property name="test.dest.dir" value="${destdir}/test-classes" />
-	<property name="lib.dir" value="/home/fft/lib" />
+	
+	<!-- Docker環境とローカル環境の両方に対応 -->
+	<condition property="lib.dir" value="/home/fft/lib" else="./lib">
+		<available file="/home/fft/lib" type="dir"/>
+	</condition>
+	
 	<path id="junit.classpath">
-		<fileset dir="${lib.dir}" includes="**/*.jar" />
+		<fileset dir="${lib.dir}" includes="**/*.jar" erroronmissingdir="false" />
 	</path>
 
 
