@@ -1,8 +1,5 @@
 package Fourier;
 
-import java.awt.image.BufferedImage;
-// import Utility.ImageUtility;
-
 /**
  * フーリエ変換のテスト用データを提供するクラス。
  * 1次元信号と2次元画像データの両方を提供します。
@@ -109,25 +106,4 @@ public class FourierData {
 		return sourceData;
 	}
 
-	// /**
-	//  * 離散フーリエ2次元変換のための元データ(ジョゼフ・フーリエさんのカラー画像)を取得します。
-	//  * @return カラー画像のYUVマトリックス
-	//  */
-	// public static double[][][] dataFourierColor()
-	// {
-	// 	BufferedImage anImage = ImageUtility.readImage("SampleImages/JosephFourier2.jpg");
-	// 	double[][][] yuvMatrixes = ImageUtility.convertImageToYUVMatrixes(anImage);
-	// 	return yuvMatrixes;
-	// }
-
-	// /**
-	//  * 離散フーリエ2次元変換のための元データ(ジョゼフ・フーリエさんのグレースケール画像)を取得します。
-	//  * @return グレースケール画像の輝度マトリックス
-	//  */
-	// public static double[][] dataFourierGrayScale()
-	// {
-	// 	BufferedImage anImage = ImageUtility.readImage("SampleImages/JosephFourier1.jpg");
-	// 	double[][] luminanceMatrix = ImageUtility.convertImageToLuminanceMatrix(anImage);
-	// 	return luminanceMatrix;
-	// }
 }

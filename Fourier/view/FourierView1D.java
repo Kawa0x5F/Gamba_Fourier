@@ -124,12 +124,14 @@ public class FourierView1D extends FourierView {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (calculationPoint != null) {
-                g.setColor(Color.RED);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
                 String info = String.format("Last Click Point: (%d, %d)", calculationPoint.x, calculationPoint.y);
-                g.drawString(info, 10, getHeight() - 40);
+                drawOutlinedString(g2, info, 10, getHeight() - 40, Color.RED, Color.WHITE, 2.0f);
 
                 String altInfo = String.format("Alt Key Pressed: %b", altPressed);
-                g.drawString(altInfo, 10, getHeight() - 20);
+                drawOutlinedString(g2, altInfo, 10, getHeight() - 20, Color.RED, Color.WHITE, 2.0f);
             }
         }
     }

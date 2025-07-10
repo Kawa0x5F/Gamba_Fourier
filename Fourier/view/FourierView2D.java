@@ -139,20 +139,7 @@ public class FourierView2D extends FourierView {
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        // [変更点] シンプルな全体更新に戻す
         super.propertyChange(evt);
-
-        // テキスト情報の更新
-        String propertyName = evt.getPropertyName();
-        if (propertyName.equals("calculationPoint") || propertyName.equals("altKeyState")) {
-            FourierModel2D model2D = (FourierModel2D) getModel();
-            if (panels.get(KEY_MODIFIED_SPECTRUM) instanceof InfoImagePanel) {
-                ((InfoImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setCalculationInfo(
-                    model2D.getLastCalculationPoint(),
-                    model2D.getIsAltDown()
-                );
-            }
-        }
     }
 
     protected class ImagePanel extends SignalPanel {
@@ -213,32 +200,8 @@ public class FourierView2D extends FourierView {
     }
 
     private class InfoImagePanel extends ImagePanel {
-        private Point calculationPoint;
-        private boolean altPressed;
-
         public InfoImagePanel(String title) {
             super(title);
-        }
-
-        public void setCalculationInfo(Point point, boolean alt) {
-            this.calculationPoint = point;
-            this.altPressed = alt;
-            // [変更点] ここでrepaintを呼ばなくてもpropertyChangeで全体が更新されるので不要
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            // [変更点] プレビューカーソルの描画ロジックを削除
-            super.paintComponent(g);
-            
-            if (calculationPoint != null) {
-                g.setColor(Color.RED);
-                g.setFont(new Font("Monospaced", Font.BOLD, 14));
-                String info = String.format("Last Click: (%d, %d)", calculationPoint.x, calculationPoint.y);
-                g.drawString(info, 10, getHeight() - 25);
-                String altInfo = String.format("Alt Key: %s", altPressed ? "ON" : "OFF");
-                g.drawString(altInfo, 10, getHeight() - 10);
-            }
         }
     }
     
