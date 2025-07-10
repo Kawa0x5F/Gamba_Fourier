@@ -99,19 +99,11 @@ public class FourierView1D extends FourierView {
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         super.propertyChange(evt); 
-
-        String propertyName = evt.getPropertyName();
-        if (propertyName.equals("calculationPoint") || propertyName.equals("altKeyState")) {
-            FourierModel1D model1D = (FourierModel1D) getModel();
-            if (panels.get(KEY_USER_MOD_SPECTRUM) instanceof InfoSignalPanel) {
-                ((InfoSignalPanel) panels.get(KEY_USER_MOD_SPECTRUM)).setCalculationInfo(model1D.getLastCalculationPoint(), model1D.getIsAltDown());
-            }
-        }
+        // デバッグ用のマウスクリック座標表示は削除済み
     }
 
     private class InfoSignalPanel extends SignalPanel {
-        private Point calculationPoint;
-        private boolean altPressed;
+        // デバッグ用のマウスクリック座標表示は削除済み
 
         public InfoSignalPanel(String title) {
             super(title);
@@ -119,25 +111,6 @@ public class FourierView1D extends FourierView {
             this.setPreferredSize(new Dimension(PANEL_WIDTH, PANEL_HEIGHT));
         }
 
-        public void setCalculationInfo(Point point, boolean alt) {
-            this.calculationPoint = point;
-            this.altPressed = alt;
-            repaint();
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            if (calculationPoint != null) {
-                Graphics2D g2 = (Graphics2D) g;
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                String info = String.format("Last Click Point: (%d, %d)", calculationPoint.x, calculationPoint.y);
-                drawOutlinedString(g2, info, 10, getHeight() - 40, Color.RED, Color.WHITE, 2.0f);
-
-                String altInfo = String.format("Alt Key Pressed: %b", altPressed);
-                drawOutlinedString(g2, altInfo, 10, getHeight() - 20, Color.RED, Color.WHITE, 2.0f);
-            }
-        }
+        // paintComponentはベースクラスのSignalPanelの実装をそのまま使用
     }
 }
