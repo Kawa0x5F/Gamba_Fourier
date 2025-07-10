@@ -1,5 +1,3 @@
-// FourierController.java の修正版
-
 package Fourier.controller;
 
 import Fourier.model.FourierModel;
@@ -7,17 +5,15 @@ import java.awt.Cursor;
 import java.awt.Component;
 import java.awt.event.MouseEvent;
 import javax.swing.event.MouseInputAdapter;
-import javax.swing.SwingUtilities; // SwingUtilitiesをインポート
+import javax.swing.SwingUtilities;
 
 /**
- * マウスの左クリックとドラッグ入力をモデルに伝え、スペクトル計算をトリガーする責務を持つ
- * コントローラの抽象親クラス。（右クリック処理を分離）
+ * マウスの左クリックとドラッグ入力をモデルに伝え、スペクトル計算をトリガーする
+ * コントローラの抽象親クラス。
  */
 public abstract class FourierController extends MouseInputAdapter {
 
     protected final FourierModel model;
-    // Menuへの参照は不要になるため削除
-    // protected final Menu menu;
     
     // カーソル管理用の変数
     private Cursor originalCursor;

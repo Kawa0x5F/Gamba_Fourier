@@ -135,55 +135,81 @@ public class FFTPerformanceTest {
 
     private void perform2DFFT_Recursive(Complex[][] data) {
         // 行FFT
+        Complex[] twiddles = generateTwiddles(WIDTH);
         for (Complex[] row : data) {
-            FFTUtil.fft(row, 0, WIDTH);
-            FFTUtil.bitReverseReorder(row);
+            FFTUtil.fft(row, twiddles);
         }
         Complex[][] transposed = transpose(data);
         // 列FFT
+        twiddles = generateTwiddles(HEIGHT);
         for (Complex[] col : transposed) {
-            FFTUtil.fft(col, 0, HEIGHT);
-            FFTUtil.bitReverseReorder(col);
+            FFTUtil.fft(col, twiddles);
         }
     }
     
     private void perform2DFFT_Iterative(Complex[][] data) {
-        // 行FFT
+        // 行FFT - 反復的実装として同じメソッドを使用（現在のAPIでは区別なし）
+        Complex[] twiddles = generateTwiddles(WIDTH);
         for (Complex[] row : data) {
-            FFTUtil.fft_iterative(row);
+            FFTUtil.fft(row, twiddles);
         }
         Complex[][] transposed = transpose(data);
         // 列FFT
+        twiddles = generateTwiddles(HEIGHT);
         for (Complex[] col : transposed) {
-            FFTUtil.fft_iterative(col);
+            FFTUtil.fft(col, twiddles);
         }
     }
     
     private void perform2DIFFT_Recursive(Complex[][] data) {
         // 行IFFT
+        Complex[] invTwiddles = generateInverseTwiddles(WIDTH);
         for (Complex[] row : data) {
-            FFTUtil.ifft(row);
+            FFTUtil.ifft(row, invTwiddles);
         }
         Complex[][] transposed = transpose(data);
         // 列IFFT
+        invTwiddles = generateInverseTwiddles(HEIGHT);
         for (Complex[] col : transposed) {
-            FFTUtil.ifft(col);
+            FFTUtil.ifft(col, invTwiddles);
         }
     }
 
     private void perform2DIFFT_Iterative(Complex[][] data) {
-        // 行IFFT
+        // 行IFFT - 反復的実装として同じメソッドを使用（現在のAPIでは区別なし）
+        Complex[] invTwiddles = generateInverseTwiddles(WIDTH);
         for (Complex[] row : data) {
-            FFTUtil.ifft_iterative(row);
+            FFTUtil.ifft(row, invTwiddles);
         }
         Complex[][] transposed = transpose(data);
         // 列IFFT
+        invTwiddles = generateInverseTwiddles(HEIGHT);
         for (Complex[] col : transposed) {
-            FFTUtil.ifft_iterative(col);
+            FFTUtil.ifft(col, invTwiddles);
         }
     }
 
     // --- テストデータ生成・操作用のユーティリティメソッド ---
+
+    // 回転因子を生成するヘルパーメソッド（FourierModel1Dから借用）
+    private Complex[] generateTwiddles(int n) {
+        Complex[] twiddles = new Complex[n / 2];
+        for (int k = 0; k < n / 2; k++) {
+            double angle = -2.0 * Math.PI * k / n;
+            twiddles[k] = new Complex(Math.cos(angle), Math.sin(angle));
+        }
+        return twiddles;
+    }
+
+    // 逆回転因子を生成するヘルパーメソッド（FourierModel1Dから借用）
+    private Complex[] generateInverseTwiddles(int n) {
+        Complex[] invTwiddles = new Complex[n / 2];
+        for (int k = 0; k < n / 2; k++) {
+            double angle = 2.0 * Math.PI * k / n; // 符号が逆
+            invTwiddles[k] = new Complex(Math.cos(angle), Math.sin(angle));
+        }
+        return invTwiddles;
+    }
 
     private static Complex[][] createRandomComplexData(int rows, int cols) {
         Complex[][] data = new Complex[rows][cols];

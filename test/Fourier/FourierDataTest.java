@@ -192,55 +192,6 @@ class FourierDataTest {
                 assertArrayEquals(expected[i], data4x4[i], DELTA);
             }
         }
-
-        @Test
-        @DisplayName("フーリエカラー画像データの読み込みテスト")
-        void testDataFourierColor() {
-            // 画像ファイルが存在しない場合のテスト
-            // 実際の画像が存在する場合は正常に動作するはず
-            assertDoesNotThrow(() -> {
-                double[][][] colorData = FourierData.dataFourierColor();
-                // 画像が存在しない場合はnullが返される可能性がある
-                if (colorData != null) {
-                    // 3次元配列の構造を確認
-                    assertTrue(colorData.length > 0);
-                    assertTrue(colorData[0].length > 0);
-                    assertEquals(3, colorData[0][0].length); // YUVの3チャンネル
-                    
-                    // 値の範囲確認（YUV値は通常0-255の範囲）
-                    for (int x = 0; x < colorData.length; x++) {
-                        for (int y = 0; y < colorData[0].length; y++) {
-                            for (int c = 0; c < 3; c++) {
-                                assertTrue(Double.isFinite(colorData[x][y][c]));
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        @Test
-        @DisplayName("フーリエグレースケール画像データの読み込みテスト")
-        void testDataFourierGrayScale() {
-            // 画像ファイルが存在しない場合のテスト
-            // 実際の画像が存在する場合は正常に動作するはず
-            assertDoesNotThrow(() -> {
-                double[][] grayData = FourierData.dataFourierGrayScale();
-                // 画像が存在しない場合はnullが返される可能性がある
-                if (grayData != null) {
-                    // 2次元配列の構造を確認
-                    assertTrue(grayData.length > 0);
-                    assertTrue(grayData[0].length > 0);
-                    
-                    // 値の範囲確認（輝度値は通常0-255の範囲）
-                    for (int x = 0; x < grayData.length; x++) {
-                        for (int y = 0; y < grayData[0].length; y++) {
-                            assertTrue(Double.isFinite(grayData[x][y]));
-                        }
-                    }
-                }
-            });
-        }
     }
 
     @Nested

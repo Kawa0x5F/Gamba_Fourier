@@ -1,14 +1,16 @@
 package Fourier.view;
 
-import Fourier.model.FourierModel;
 import Fourier.model.FourierModel2D;
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Graphics;
+import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
-public class FourierView2D extends FourierView implements PropertyChangeListener {
+/**
+ * 2次元フーリエ変換の結果を表示するビュークラス。
+ * オリジナル画像、パワースペクトル、再構成画像、ユーザー変更スペクトルの4つのパネルを表示します。
+ */
+public class FourierView2D extends FourierView {
 
     private static final String KEY_ORIGINAL_IMAGE = "Original Image";
     private static final String KEY_ORIGINAL_SPECTRUM = "Original Power Spectrum (Log Scale)";
@@ -23,7 +25,11 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
     private double initialSpectrumLogMin;
     private double initialSpectrumLogMax;
 
-    // --- コンストラクタ ---
+    /**
+     * 2次元フーリエ変換ビューを作成します。
+     * @param model 2次元フーリエ変換モデル
+     * @param creationIndex ウィンドウ作成インデックス
+     */
     public FourierView2D(FourierModel2D model, int creationIndex) {
         super(model, "2D Fourier Transform - Spectrum Manipulation");
         
@@ -134,20 +140,7 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        // [変更点] シンプルな全体更新に戻す
         super.propertyChange(evt);
-
-        // テキスト情報の更新
-        String propertyName = evt.getPropertyName();
-        if (propertyName.equals("calculationPoint") || propertyName.equals("altKeyState")) {
-            FourierModel2D model2D = (FourierModel2D) getModel();
-            if (panels.get(KEY_MODIFIED_SPECTRUM) instanceof InfoImagePanel) {
-                ((InfoImagePanel) panels.get(KEY_MODIFIED_SPECTRUM)).setCalculationInfo(
-                    model2D.getLastCalculationPoint(),
-                    model2D.getIsAltDown()
-                );
-            }
-        }
     }
 
     protected class ImagePanel extends SignalPanel {
@@ -208,32 +201,8 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
     }
 
     private class InfoImagePanel extends ImagePanel {
-        private Point calculationPoint;
-        private boolean altPressed;
-
         public InfoImagePanel(String title) {
             super(title);
-        }
-
-        public void setCalculationInfo(Point point, boolean alt) {
-            this.calculationPoint = point;
-            this.altPressed = alt;
-            // [変更点] ここでrepaintを呼ばなくてもpropertyChangeで全体が更新されるので不要
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            // [変更点] プレビューカーソルの描画ロジックを削除
-            super.paintComponent(g);
-            
-            if (calculationPoint != null) {
-                g.setColor(Color.RED);
-                g.setFont(new Font("Monospaced", Font.BOLD, 14));
-                String info = String.format("Last Click: (%d, %d)", calculationPoint.x, calculationPoint.y);
-                g.drawString(info, 10, getHeight() - 25);
-                String altInfo = String.format("Alt Key: %s", altPressed ? "ON" : "OFF");
-                g.drawString(altInfo, 10, getHeight() - 10);
-            }
         }
     }
     

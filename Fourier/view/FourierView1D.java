@@ -2,21 +2,34 @@ package Fourier.view;
 
 import Fourier.model.FourierModel1D;
 
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Color;
+import java.awt.Point;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import javax.swing.JPanel;
 
-public class FourierView1D extends FourierView implements PropertyChangeListener {
+/**
+ * 1次元フーリエ変換の結果を表示するビュークラス。
+ * オリジナル信号、パワースペクトル、再構成信号、ユーザー変更スペクトルの4つのパネルを表示します。
+ */
+public class FourierView1D extends FourierView {
 
     private static final String KEY_ORIGINAL = "Original Signal";
     private static final String KEY_SPECTRUM_INITIAL = "Original Power Spectrum";
     private static final String KEY_IFFT_RESULT = "Reconstructed Signal";
     private static final String KEY_USER_MOD_SPECTRUM = "User Modified Power Spectrum";
 
-    public static final int PANEL_WIDTH = 400;
-    public static final int PANEL_HEIGHT = 250;
+    public static final int PANEL_WIDTH = 350;
+    public static final int PANEL_HEIGHT = 160;
 
+    /**
+     * 1次元フーリエ変換ビューを作成します。
+     * @param model 1次元フーリエ変換モデル
+     * @param creationIndex ウィンドウ作成インデックス
+     */
     public FourierView1D(FourierModel1D model, int creationIndex) {
         super(model, "1D Fourier Transform - Spectrum Manipulation");
 
@@ -116,12 +129,14 @@ public class FourierView1D extends FourierView implements PropertyChangeListener
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (calculationPoint != null) {
-                g.setColor(Color.RED);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
                 String info = String.format("Last Click Point: (%d, %d)", calculationPoint.x, calculationPoint.y);
-                g.drawString(info, 10, getHeight() - 40);
+                drawOutlinedString(g2, info, 10, getHeight() - 40, Color.RED, Color.WHITE, 2.0f);
 
                 String altInfo = String.format("Alt Key Pressed: %b", altPressed);
-                g.drawString(altInfo, 10, getHeight() - 20);
+                drawOutlinedString(g2, altInfo, 10, getHeight() - 20, Color.RED, Color.WHITE, 2.0f);
             }
         }
     }

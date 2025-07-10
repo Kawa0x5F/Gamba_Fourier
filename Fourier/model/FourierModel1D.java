@@ -3,8 +3,12 @@ package Fourier.model;
 import java.awt.Point;
 import Fourier.Complex;
 import Fourier.FFTUtil;
-import Fourier.view.FourierView1D; // PANEL_WIDTH, PANEL_HEIGHT を使用するため
+import Fourier.view.FourierView1D;
 
+/**
+ * 1次元フーリエ変換のモデルクラス。
+ * 1次元信号のFFT、パワースペクトル計算、逆FFTなどの機能を提供します。
+ */
 public class FourierModel1D extends FourierModel {
 
     // ブラシサイズの定数
@@ -31,10 +35,17 @@ public class FourierModel1D extends FourierModel {
     private Point lastCalculationPoint;
     private boolean isAltDown;
 
+    /**
+     * デフォルトコンストラクタ。
+     */
     public FourierModel1D() {
         // デフォルトコンストラクタ
     }
 
+    /**
+     * 初期データを指定してモデルを作成します。
+     * @param initialData 初期の1次元信号データ
+     */
     public FourierModel1D(double[] initialData) {
         this.initialOriginData = initialData;
         
@@ -65,46 +76,83 @@ public class FourierModel1D extends FourierModel {
         performIfftAndNotify();
     }
 
-    // --- ゲッターメソッド ---
+    /**
+     * 初期のオリジナルデータを取得します。
+     * @return 初期の波形データ
+     */
     public double[] getInitialOriginData() {
         return initialOriginData;
     }
 
+    /**
+     * 再計算されたパワースペクトルデータを取得します。
+     * @return 再計算されたパワースペクトルデータ
+     */
     public double[] getRecalculatedPowerSpectrumData() {
         return recalculatedPowerSpectrumData;
     }
 
+    /**
+     * 初期計算されたパワースペクトルデータを取得します。
+     * @return 初期計算されたパワースペクトルデータ
+     */
     public double[] getInitialCalculatedPowerSpectrumData() {
         return initialCalculatedPowerSpectrumData;
     }
     
-    // IFFTで再構成された時間領域データ
+    /**
+     * IFFTで再構成された時間領域データを取得します。
+     * @return IFFT結果データ
+     */
     public double[] getIfftResultData() {
         return ifftResultData;
     }
 
+    /**
+     * ユーザーが変更したスペクトルデータを取得します。
+     * @return ユーザー変更スペクトルデータ
+     */
     public Complex[] getUserModifiedSpectrumData() {
         return userModifiedSpectrumData;
     }
 
+    /**
+     * 最後の計算点を取得します。
+     * @return 最後の計算点
+     */
     public Point getLastCalculationPoint() {
         return lastCalculationPoint;
     }
 
+    /**
+     * Altキーが押されているかどうかを取得します。
+     * @return Altキーが押されている場合はtrue
+     */
     public boolean getIsAltDown() {
         return isAltDown;
     }
 
-    // ブラシサイズの取得と設定
+    /**
+     * 現在のブラシサイズを取得します。
+     * @return ブラシサイズ
+     */
     public int getBrushSize() {
         return brushSize;
     }
 
+    /**
+     * ブラシサイズを設定します。
+     * @param brushSize 新しいブラシサイズ（最小値は1）
+     */
     public void setBrushSize(int brushSize) {
         this.brushSize = Math.max(1, brushSize); // 最小値を1に制限
     }
 
-    // --- ヘルパーメソッド ---
+    /**
+     * double配列をComplex配列に変換します。
+     * @param data 変換するdouble配列
+     * @return 変換されたComplex配列
+     */
     private Complex[] convertDoubleToComplex(double[] data) {
         if (data == null) return null;
         Complex[] complexArray = new Complex[data.length];
@@ -114,7 +162,11 @@ public class FourierModel1D extends FourierModel {
         return complexArray;
     }
 
-    // FFT済みのComplex配列からパワースペクトルを計算するヘルパーメソッド
+    /**
+     * FFT済みのComplex配列からパワースペクトルを計算するヘルパーメソッド
+     * @param fftResultData FFT結果データ
+     * @return パワースペクトルデータ
+     */
     private double[] calculatePowerSpectrumFromFFTResult(Complex[] fftResultData) {
         if (fftResultData == null || fftResultData.length == 0) return new double[0];
         double[] powerSpectrum = new double[fftResultData.length];
@@ -126,7 +178,11 @@ public class FourierModel1D extends FourierModel {
         return powerSpectrum;
     }
 
-    // 回転因子を生成するヘルパーメソッド
+    /**
+     * 回転因子を生成するヘルパーメソッド
+     * @param n データ長
+     * @return 回転因子の配列
+     */
     private Complex[] generateTwiddles(int n) {
         Complex[] twiddles = new Complex[n / 2];
         for (int k = 0; k < n / 2; k++) {
@@ -136,7 +192,11 @@ public class FourierModel1D extends FourierModel {
         return twiddles;
     }
 
-    // 逆回転因子を生成するヘルパーメソッド
+    /**
+     * 逆回転因子を生成するヘルパーメソッド
+     * @param n データ長
+     * @return 逆回転因子の配列
+     */
     private Complex[] generateInverseTwiddles(int n) {
         Complex[] invTwiddles = new Complex[n / 2];
         for (int k = 0; k < n / 2; k++) {
@@ -190,7 +250,9 @@ public class FourierModel1D extends FourierModel {
         firePropertyChange("altKeyState", null, isAltDown);
     }
 
-    // ユーザーが操作したスペクトルデータからパワースペクトルを再計算し、Viewに通知するメソッド
+    /**
+     * ユーザーが操作したスペクトルデータからパワースペクトルを再計算し、Viewに通知するメソッド
+     */
     private void recalculateSpectrumFromUserModifiedData() {
         double[] oldCalculatedData = this.recalculatedPowerSpectrumData;
         
@@ -204,7 +266,9 @@ public class FourierModel1D extends FourierModel {
         firePropertyChange("recalculatedPowerSpectrumData", oldCalculatedData, this.recalculatedPowerSpectrumData);
     }
 
-    // IFFTを実行し、時間領域の波形を再構成してViewに通知するメソッド
+    /**
+     * IFFTを実行し、時間領域の波形を再構成してViewに通知するメソッド
+     */
     private void performIfftAndNotify() {
         if (this.userModifiedSpectrumData == null || this.userModifiedSpectrumData.length == 0) {
             System.err.println("Model1D: IFFT - userModifiedSpectrumData is null or empty.");

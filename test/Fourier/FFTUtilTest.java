@@ -19,6 +19,26 @@ class FFTUtilTest {
     private Complex[] testData4;
     private Complex[] testData8;
 
+    // 回転因子を生成するヘルパーメソッド
+    private Complex[] generateTwiddles(int n) {
+        Complex[] twiddles = new Complex[n / 2];
+        for (int k = 0; k < n / 2; k++) {
+            double angle = -2.0 * Math.PI * k / n;
+            twiddles[k] = new Complex(Math.cos(angle), Math.sin(angle));
+        }
+        return twiddles;
+    }
+
+    // 逆回転因子を生成するヘルパーメソッド
+    private Complex[] generateInverseTwiddles(int n) {
+        Complex[] invTwiddles = new Complex[n / 2];
+        for (int k = 0; k < n / 2; k++) {
+            double angle = 2.0 * Math.PI * k / n; // 符号が逆
+            invTwiddles[k] = new Complex(Math.cos(angle), Math.sin(angle));
+        }
+        return invTwiddles;
+    }
+
     @BeforeEach
     void setUp() {
         // 4要素のテストデータ: [1, 2, 3, 4]
@@ -93,8 +113,8 @@ class FFTUtilTest {
             Complex[] data = testData4.clone();
             
             // FFTを実行
-            FFTUtil.fft(data, 0, data.length);
-            FFTUtil.bitReverseReorder(data);
+            Complex[] twiddles = generateTwiddles(data.length);
+            FFTUtil.fft(data, twiddles);
 
             // 期待される結果: [10, -2+2i, -2, -2-2i]
             Complex[] expected = {
@@ -118,7 +138,8 @@ class FFTUtilTest {
             Complex[] data = {new Complex(5, 3)};
             Complex[] original = data.clone();
             
-            FFTUtil.fft(data, 0, 1);
+            Complex[] twiddles = generateTwiddles(data.length);
+            FFTUtil.fft(data, twiddles);
             
             assertEquals(original[0].getReal(), data[0].getReal(), DELTA);
             assertEquals(original[0].getImaginary(), data[0].getImaginary(), DELTA);
@@ -129,8 +150,8 @@ class FFTUtilTest {
         void testFFT2Point() {
             Complex[] data = {new Complex(1, 0), new Complex(2, 0)};
             
-            FFTUtil.fft(data, 0, data.length);
-            FFTUtil.bitReverseReorder(data);
+            Complex[] twiddles = generateTwiddles(data.length);
+            FFTUtil.fft(data, twiddles);
 
             // 期待される結果: [3, -1]
             assertEquals(3.0, data[0].getReal(), DELTA);
@@ -151,9 +172,10 @@ class FFTUtilTest {
             Complex[] data = testData8.clone();
 
             // FFT -> IFFT
-            FFTUtil.fft(data, 0, data.length);
-            FFTUtil.bitReverseReorder(data);
-            FFTUtil.ifft(data);
+            Complex[] twiddles = generateTwiddles(data.length);
+            Complex[] invTwiddles = generateInverseTwiddles(data.length);
+            FFTUtil.fft(data, twiddles);
+            FFTUtil.ifft(data, invTwiddles);
 
             // 元のデータと比較
             for (int i = 0; i < data.length; i++) {
@@ -173,9 +195,10 @@ class FFTUtilTest {
                 data[i] = new Complex(1, 0);
             }
 
-            FFTUtil.fft(data, 0, data.length);
-            FFTUtil.bitReverseReorder(data);
-            FFTUtil.ifft(data);
+            Complex[] twiddles = generateTwiddles(data.length);
+            Complex[] invTwiddles = generateInverseTwiddles(data.length);
+            FFTUtil.fft(data, twiddles);
+            FFTUtil.ifft(data, invTwiddles);
 
             // 全て1に戻っているはず
             for (int i = 0; i < data.length; i++) {
@@ -307,17 +330,15 @@ class FFTUtilTest {
 
             // FFT(ax + by)を計算
             Complex[] combinedFFT = combined.clone();
-            FFTUtil.fft(combinedFFT, 0, combinedFFT.length);
-            FFTUtil.bitReverseReorder(combinedFFT);
+            Complex[] twiddles = generateTwiddles(combinedFFT.length);
+            FFTUtil.fft(combinedFFT, twiddles);
 
             // a*FFT(x) + b*FFT(y)を計算
             Complex[] xFFT = x.clone();
-            FFTUtil.fft(xFFT, 0, xFFT.length);
-            FFTUtil.bitReverseReorder(xFFT);
+            FFTUtil.fft(xFFT, twiddles);
 
             Complex[] yFFT = y.clone();
-            FFTUtil.fft(yFFT, 0, yFFT.length);
-            FFTUtil.bitReverseReorder(yFFT);
+            FFTUtil.fft(yFFT, twiddles);
 
             Complex[] linearCombination = new Complex[x.length];
             for (int i = 0; i < x.length; i++) {
@@ -343,8 +364,8 @@ class FFTUtilTest {
             }
 
             // FFT実行
-            FFTUtil.fft(data, 0, data.length);
-            FFTUtil.bitReverseReorder(data);
+            Complex[] twiddles = generateTwiddles(data.length);
+            FFTUtil.fft(data, twiddles);
 
             // FFT結果のパワー計算
             double fftPower = 0;

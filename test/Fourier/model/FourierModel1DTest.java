@@ -18,6 +18,26 @@ class FourierModel1DTest {
     // 浮動小数点数の比較に使用する許容誤差
     private static final double DELTA = 1e-9;
 
+    // 回転因子を生成するヘルパーメソッド
+    private Complex[] generateTwiddles(int n) {
+        Complex[] twiddles = new Complex[n / 2];
+        for (int k = 0; k < n / 2; k++) {
+            double angle = -2.0 * Math.PI * k / n;
+            twiddles[k] = new Complex(Math.cos(angle), Math.sin(angle));
+        }
+        return twiddles;
+    }
+
+    // 逆回転因子を生成するヘルパーメソッド
+    private Complex[] generateInverseTwiddles(int n) {
+        Complex[] invTwiddles = new Complex[n / 2];
+        for (int k = 0; k < n / 2; k++) {
+            double angle = 2.0 * Math.PI * k / n; // 符号が逆
+            invTwiddles[k] = new Complex(Math.cos(angle), Math.sin(angle));
+        }
+        return invTwiddles;
+    }
+
     /**
      * 各テストの実行前に、新しいFourierModel1Dインスタンスを初期化します。
      */
@@ -59,8 +79,10 @@ class FourierModel1DTest {
         // 2. 実行: FFTを計算
         // inputDataをコピーしてFFTを実行
         Complex[] testData = inputData.clone();
-        FFTUtil.fft(testData, 0, testData.length);
-        FFTUtil.bitReverseReorder(testData);
+        
+        // 回転因子を生成
+        Complex[] twiddles = generateTwiddles(testData.length);
+        FFTUtil.fft(testData, twiddles);
 
         // 3. 検証: 結果が期待値と一致するか確認
         assertEquals(expectedOutput.length, testData.length, "配列の長さが一致しません");
@@ -96,11 +118,15 @@ class FourierModel1DTest {
         // 2. 実行: FFT -> IFFT
         // まず順変換 (FFT)
         Complex[] testData = originalData.clone();
-        FFTUtil.fft(testData, 0, testData.length);
-        FFTUtil.bitReverseReorder(testData);
+        
+        // 回転因子を生成
+        Complex[] twiddles = generateTwiddles(testData.length);
+        Complex[] invTwiddles = generateInverseTwiddles(testData.length);
+        
+        FFTUtil.fft(testData, twiddles);
         
         // 次に逆変換 (IFFT)
-        FFTUtil.ifft(testData);
+        FFTUtil.ifft(testData, invTwiddles);
 
         // 3. 検証: 逆変換後のデータが元のデータと一致するか確認
         assertEquals(originalData.length, testData.length, "配列の長さが一致しません");

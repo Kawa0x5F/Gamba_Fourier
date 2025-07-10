@@ -1,11 +1,26 @@
 package Fourier.view;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
+import java.awt.GridLayout;
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
+/**
+ * 画像を4つのグリッドで表示するウィンドウクラス。
+ * 左上のグリッドに指定された画像を縦横比を保って表示します。
+ */
 public class ImageWindow extends JFrame {
 
+    /**
+     * 指定されたタイトルと画像でImageWindowを作成します。
+     * @param title ウィンドウのタイトル
+     * @param image 表示する画像
+     */
     public ImageWindow(String title, BufferedImage image) {
         super(title);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -32,14 +47,25 @@ public class ImageWindow extends JFrame {
         setVisible(true);
     }
 
-    // 内部クラス：縦横比を保って画像を描画するパネル
+    /**
+     * 縦横比を保って画像を描画するパネルの内部クラス。
+     */
     private static class AspectRatioImagePanel extends JPanel {
         private final BufferedImage image;
 
+        /**
+         * 指定された画像でAspectRatioImagePanelを作成します。
+         * @param image 表示する画像
+         */
         public AspectRatioImagePanel(BufferedImage image) {
             this.image = image;
         }
 
+        /**
+         * パネルのコンポーネントを描画します。
+         * 画像を縦横比を保ってパネル内に描画します。
+         * @param g 描画に使用するGraphicsオブジェクト
+         */
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
