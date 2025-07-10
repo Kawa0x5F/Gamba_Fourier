@@ -286,4 +286,67 @@ class ComplexTest {
             assertEquals(0.0, product.getImaginary(), DELTA);
         }
     }
+
+    @Nested
+    @DisplayName("ミュータブルメソッドのテスト")
+    class MutableMethodsTest {
+
+        @Test
+        @DisplayName("set(double, double)メソッドが正常に動作する")
+        void testSetDoubleValues() {
+            Complex c = new Complex(1, 1);
+            c.set(5.5, -3.2);
+            assertEquals(5.5, c.getReal(), DELTA);
+            assertEquals(-3.2, c.getImaginary(), DELTA);
+        }
+
+        @Test
+        @DisplayName("set(Complex)メソッドが正常に動作する")
+        void testSetComplexValue() {
+            Complex c = new Complex(1, 1);
+            Complex source = new Complex(2.5, -1.5);
+            c.set(source);
+            assertEquals(2.5, c.getReal(), DELTA);
+            assertEquals(-1.5, c.getImaginary(), DELTA);
+        }
+
+        @Test
+        @DisplayName("mulInPlaceメソッドが正常に動作する")
+        void testMulInPlace() {
+            Complex c = new Complex(3, 4);  // 3 + 4i
+            Complex multiplier = new Complex(1, -2); // 1 - 2i
+            
+            // 期待値: (3 + 4i) * (1 - 2i) = 3 - 6i + 4i - 8i² = 3 - 2i + 8 = 11 - 2i
+            c.mulInPlace(multiplier);
+            assertEquals(11.0, c.getReal(), DELTA);
+            assertEquals(-2.0, c.getImaginary(), DELTA);
+        }
+
+        @Test
+        @DisplayName("scaleInPlaceメソッドが正常に動作する")
+        void testScaleInPlace() {
+            Complex c = new Complex(3, 4);
+            c.scaleInPlace(2.5);
+            assertEquals(7.5, c.getReal(), DELTA);
+            assertEquals(10.0, c.getImaginary(), DELTA);
+        }
+
+        @Test
+        @DisplayName("scaleInPlaceでゼロ倍すると零複素数になる")
+        void testScaleInPlaceZero() {
+            Complex c = new Complex(3, 4);
+            c.scaleInPlace(0.0);
+            assertEquals(0.0, c.getReal(), DELTA);
+            assertEquals(0.0, c.getImaginary(), DELTA);
+        }
+
+        @Test
+        @DisplayName("scaleInPlaceで負数倍すると符号が反転する")
+        void testScaleInPlaceNegative() {
+            Complex c = new Complex(3, 4);
+            c.scaleInPlace(-1.0);
+            assertEquals(-3.0, c.getReal(), DELTA);
+            assertEquals(-4.0, c.getImaginary(), DELTA);
+        }
+    }
 }
