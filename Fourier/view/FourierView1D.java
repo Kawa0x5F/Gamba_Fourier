@@ -17,8 +17,8 @@ public class FourierView1D extends FourierView {
     private static final String KEY_IFFT_RESULT = "Reconstructed Signal";
     private static final String KEY_USER_MOD_SPECTRUM = "User Modified Power Spectrum";
 
-    public static final int PANEL_WIDTH = 400;
-    public static final int PANEL_HEIGHT = 250;
+    public static final int PANEL_WIDTH = 350;
+    public static final int PANEL_HEIGHT = 160;
 
     /**
      * 1次元フーリエ変換ビューを作成します。
