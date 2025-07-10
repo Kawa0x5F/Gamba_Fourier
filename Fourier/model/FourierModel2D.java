@@ -11,9 +11,13 @@ import Fourier.Complex;
 import Fourier.FFTUtil;
 import Fourier.view.FourierView2D;
 
+/**
+ * 2次元フーリエ変換のモデルクラス。
+ * カラー画像のFFT、パワースペクトル計算、逆FFTなどの機能を提供します。
+ */
 public class FourierModel2D extends FourierModel {
 
-    // --- フィールド定義 ---
+    // フィールド定義
     private double[][][] initialOriginData_Color;
     private Complex[][] initialComplexData_R, initialComplexData_G, initialComplexData_B;
     private double[][] initialPowerSpectrumData;
@@ -29,14 +33,18 @@ public class FourierModel2D extends FourierModel {
     private final Timer periodicTimer;
     private boolean hasPendingCalculation = false;
 
-    // [高速化] IFFT計算用の作業用バッファを追加
+    // IFFT計算用の作業用バッファ
     private Complex[][] ifftWorkspace_R, ifftWorkspace_G, ifftWorkspace_B;
     
     // 表示サイズ情報
     private int displayWidth = 400;  // デフォルト値
     private int displayHeight = 400; // デフォルト値
 
-    // --- コンストラクタ ---
+    /**
+     * 初期カラー画像データを指定してモデルを作成します。
+     * @param initialColorData 初期のカラー画像データ（[width][height][RGB]の3次元配列）
+     * @throws IllegalArgumentException カラーチャンネルが3でない場合
+     */
     public FourierModel2D(double[][][] initialColorData) {
         this.initialOriginData_Color = initialColorData;
         int width = initialColorData.length;

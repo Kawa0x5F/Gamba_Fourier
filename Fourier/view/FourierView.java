@@ -11,6 +11,10 @@ import java.beans.PropertyChangeListener;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * フーリエ変換ビューの抽象基底クラス。
+ * 1次元と2次元のフーリエ変換ビューで共通する機能を提供します。
+ */
 public abstract class FourierView implements PropertyChangeListener {
     private final FourierModel model;
     protected final JFrame frame;
@@ -18,6 +22,11 @@ public abstract class FourierView implements PropertyChangeListener {
     
     private final JPanel contentPanel;
 
+    /**
+     * フーリエビューを作成します。
+     * @param model フーリエ変換モデル
+     * @param title ウィンドウタイトル
+     */
     public FourierView(FourierModel model, String title) {
         this.model = model;
         this.model.addPropertyChangeListener(this);
@@ -39,12 +48,19 @@ public abstract class FourierView implements PropertyChangeListener {
         frame.setLocationRelativeTo(null);
     }
 
-    // 可視性を public に変更し、エラーの可能性をなくします
+    /**
+     * モデルを取得します。
+     * @return フーリエ変換モデル
+     */
     public FourierModel getModel() {
         return this.model;
     }
     
-    // パネルをフレームではなく、contentPanelに追加するように修正
+    /**
+     * パネルをコンテンツパネルに追加します。
+     * @param name パネル名
+     * @param panel 追加するパネル
+     */
     protected void addPanel(String name, JPanel panel) {
         this.panels.put(name, panel);
         this.contentPanel.add(panel);

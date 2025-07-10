@@ -7,6 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 
+/**
+ * ファイル入出力を行うユーティリティクラス。
+ * CSVファイルと画像ファイルの読み書きに対応しています。
+ */
 public class FileIO {
 
     /**
@@ -34,6 +38,7 @@ public class FileIO {
      * CSVファイルから1次元信号を読み込みます。
      * クラスパスリソース、ファイルシステム上の絶対パスの両方に対応します。
      * @param filePath 読み込むCSVファイルのリソースパス、または絶対パス
+     * @return 読み込んだ1次元信号データ、失敗時はnull
      */
     public static double[] readSignalFromCSV(String filePath) {
         List<Double> signalList = new ArrayList<>();
@@ -76,6 +81,7 @@ public class FileIO {
     /**
      * 画像ファイルから2次元信号(RGB)を読み込みます。
      * @param filePath 読み込む画像ファイルの絶対パス
+     * @return RGB信号の3次元配列（[x][y][色]）、失敗時はnull
      */
     public static double[][][] readSignalFromImage(String filePath) {
         InputStream is = null;
@@ -120,7 +126,9 @@ public class FileIO {
     }
 
     /**
-     * 1次元データを保存
+     * 1次元データをCSVファイルに保存します。
+     * @param signalData 保存する1次元データ
+     * @param filePath 保存先ファイルパス（拡張子が未指定の場合は.csvが追加される）
      */
     public static void writeSignalToCSV (double[] signalData, String filePath) { //ファイルの保存先の指定はメニューが行う予定
         if (signalData == null || signalData.length == 0) {
@@ -145,8 +153,10 @@ public class FileIO {
         }            
     } 
     
-     /**
-     * 2次元データを保存
+    /**
+     * 2次元画像データを画像ファイルに保存します。
+     * @param imageData 保存する画像データ（[x][y][RGB]の3次元配列）
+     * @param filePath 保存先ファイルパス（拡張子が未指定の場合は.pngが追加される）
      */
     public static void writeSignalToImage (double[][][] imageData, String filePath) {
         // 拡張子がない場合は.pngを追加
@@ -184,7 +194,9 @@ public class FileIO {
     } 
 
     /**
-     * ファイルパスが画像の拡張子を持っているかチェック
+     * ファイルパスが画像の拡張子を持っているかチェックします。
+     * @param filePath チェックするファイルパス
+     * @return 画像の拡張子を持つ場合はtrue
      */
     private static boolean hasImageExtension(String filePath) {
         String name = filePath.toLowerCase();
@@ -194,9 +206,10 @@ public class FileIO {
     }
 
     /**
-     * 画像ファイルの拡張子を取得
-     * 対応していない拡張子の場合はnullを返す
-     * 対応拡張子: jpg(jpeg), png, bmp, gif
+     * 画像ファイルの拡張子を取得します。
+     * 対応していない拡張子の場合はnullを返します。
+     * @param imageFile 画像ファイル
+     * @return 対応している拡張子名、または対応していない場合はnull
      */
     private static String getImageFormat(File imageFile) {
         String name = imageFile.getName().toLowerCase();

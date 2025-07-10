@@ -3,12 +3,19 @@ package Fourier.view;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * 1次元信号データをグラフとして表示するパネルクラス。
+ * 信号データを線グラフで描画し、Y軸の最大値を固定することができます。
+ */
 public class SignalPanel extends JPanel {
     private double[] data;
-    private String title; // グリッド番号からタイトルに変更
+    private String title;
     private double fixedMaxValue = -1;
 
-    // コンストラクタ：初期データはnullでも可
+    /**
+     * 指定されたタイトルでSignalPanelを作成します。
+     * @param title パネルのタイトル
+     */
     public SignalPanel(String title) {
         this.title = title;
         this.data = null;
@@ -26,12 +33,17 @@ public class SignalPanel extends JPanel {
 
     /**
      * グラフのY軸の最大値を固定します。
-     * @param max 固定したい最大値
+     * @param max 固定したい最大値（0以下の場合は1.0に設定される）
      */
     public void setFixedMaxValue(double max) {
         this.fixedMaxValue = (max > 0) ? max : 1.0; // 0や負の数が設定されるのを防ぐ
     }
 
+    /**
+     * パネルのコンポーネントを描画します。
+     * 信号データを線グラフとして描画します。
+     * @param g 描画に使用するGraphicsオブジェクト
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

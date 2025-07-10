@@ -3,9 +3,14 @@ package Fourier;
 import java.awt.image.BufferedImage;
 import Utility.ImageUtility;
 
-public class FourierData {
 /**
-	 * 離散フーリエ1次元変換のための元データ(チャープ信号:低周波から高周波に周波数が連続的に変わる信号)。
+ * フーリエ変換のテスト用データを提供するクラス。
+ * 1次元信号と2次元画像データの両方を提供します。
+ */
+public class FourierData {
+	/**
+	 * 離散フーリエ1次元変換のための元データ(チャープ信号:低周波から高周波に周波数が連続的に変わる信号)を生成します。
+	 * @return チャープ信号の配列
 	 */
 	public static double[] dataChirpSignal()
 	{
@@ -21,7 +26,8 @@ public class FourierData {
 	}
 
 	/**
-	 * 離散フーリエ1次元変換のための元データ(のこぎり波:波形の見た目が鋸の歯のような信号)。
+	 * 離散フーリエ1次元変換のための元データ(のこぎり波:波形の見た目が鋸の歯のような信号)を生成します。
+	 * @return のこぎり波の配列
 	 */
 	public static double[] dataSawtoothWave()
 	{
@@ -36,7 +42,8 @@ public class FourierData {
 	}
 
 	/**
-	 * 離散フーリエ1次元変換のための元データ(矩形波:二つのレベルの間を規則的かつ瞬間的に変化する信号)。
+	 * 離散フーリエ1次元変換のための元データ(矩形波:二つのレベルの間を規則的かつ瞬間的に変化する信号)を生成します。
+	 * @return 矩形波の配列
 	 */
 	public static double[] dataSquareWave()
 	{
@@ -53,7 +60,8 @@ public class FourierData {
 	}
 
 	/**
-	 * 離散フーリエ1次元変換のための元データ(いくつかの正弦波と余弦波の合成波)。
+	 * 離散フーリエ1次元変換のための元データ(いくつかの正弦波と余弦波の合成波)を生成します。
+	 * @return 合成波の配列
 	 */
 	public static double[] dataSampleWave()
 	{
@@ -73,7 +81,8 @@ public class FourierData {
 	}
 
 	/**
-	 * 離散フーリエ1次元変換のための元データ(三角波:波形の見た目が三角形のような信号)。
+	 * 離散フーリエ1次元変換のための元データ(三角波:波形の見た目が三角形のような信号)を生成します。
+	 * @return 三角波の配列
 	 */
 	public static double[] dataTriangleWave()
 	{
@@ -91,7 +100,8 @@ public class FourierData {
 	}
 
 	/**
-	 * 離散フーリエ2次元変換のための元データ(4×4の2次元配列)。
+	 * 離散フーリエ2次元変換のための元データ(4×4の2次元配列)を生成します。
+	 * @return 4×4の2次元配列
 	 */
 	public static double[][] data4x4()
 	{
@@ -100,7 +110,8 @@ public class FourierData {
 	}
 
 	/**
-	 * 離散フーリエ2次元変換のための元データ(ジョゼフ・フーリエさんのカラー画像)。
+	 * 離散フーリエ2次元変換のための元データ(ジョゼフ・フーリエさんのカラー画像)を取得します。
+	 * @return カラー画像のYUVマトリックス
 	 */
 	public static double[][][] dataFourierColor()
 	{
@@ -110,7 +121,8 @@ public class FourierData {
 	}
 
 	/**
-	 * 離散フーリエ2次元変換のための元データ(ジョゼフ・フーリエさんのグレースケール画像)。
+	 * 離散フーリエ2次元変換のための元データ(ジョゼフ・フーリエさんのグレースケール画像)を取得します。
+	 * @return グレースケール画像の輝度マトリックス
 	 */
 	public static double[][] dataFourierGrayScale()
 	{

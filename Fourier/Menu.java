@@ -16,6 +16,10 @@ public class Menu {
 
     private final FourierModel model;
 
+    /**
+     * メニューを作成します。
+     * @param model フーリエ変換モデル
+     */
     public Menu(FourierModel model) {
         this.model = model;
     }
@@ -48,9 +52,10 @@ public class Menu {
         }
         popupMenu.add(saveFileItem);
 
-        popupMenu.addSeparator(); // 見た目を良くするための区切り線
+        // メニュー項目間の区切り線
+        popupMenu.addSeparator();
 
-        // --- Clearメニュー ---
+        // スペクトラムクリアメニュー
         JMenuItem clearItem = new JMenuItem("Clear Spectrum");
         clearItem.addActionListener(e -> {
             // モデルのインスタンスタイプをチェックして適切なメソッドを呼び出す
@@ -62,7 +67,7 @@ public class Menu {
         });
         popupMenu.add(clearItem);
 
-        // --- Fillメニュー ---
+        // スペクトラム埋め込みメニュー
         JMenuItem fillItem = new JMenuItem("Fill Spectrum");
         fillItem.addActionListener(e -> {
             // モデルのインスタンスタイプをチェックして適切なメソッドを呼び出す
@@ -134,7 +139,7 @@ public class Menu {
     /**
      * ファイル選択ダイアログを表示し、選択されたファイルのパスを取得します。
      * @param parent 親コンポーネント
-     * @return ファイルパス。選択されなかった場合はnull。
+     * @return ファイルパス。選択されなかった場合はnull
      */
     public static String getOpenFilePath(Component parent) {
         JFileChooser chooser = new JFileChooser();
@@ -189,7 +194,7 @@ public class Menu {
     /**
      * ファイル保存ダイアログを表示し、保存するファイルのパスを取得します。
      * @param parent 親コンポーネント
-     * @return ファイルパス。選択されなかった場合はnull。
+     * @return ファイルパス。選択されなかった場合はnull
      */
     public static String getSaveFilePath(Component parent) {
         JFileChooser chooser = new JFileChooser();

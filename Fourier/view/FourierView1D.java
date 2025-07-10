@@ -4,10 +4,13 @@ import Fourier.model.FourierModel1D;
 
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import javax.swing.JPanel;
 
-public class FourierView1D extends FourierView implements PropertyChangeListener {
+/**
+ * 1次元フーリエ変換の結果を表示するビュークラス。
+ * オリジナル信号、パワースペクトル、再構成信号、ユーザー変更スペクトルの4つのパネルを表示します。
+ */
+public class FourierView1D extends FourierView {
 
     private static final String KEY_ORIGINAL = "Original Signal";
     private static final String KEY_SPECTRUM_INITIAL = "Original Power Spectrum";
@@ -17,6 +20,11 @@ public class FourierView1D extends FourierView implements PropertyChangeListener
     public static final int PANEL_WIDTH = 400;
     public static final int PANEL_HEIGHT = 250;
 
+    /**
+     * 1次元フーリエ変換ビューを作成します。
+     * @param model 1次元フーリエ変換モデル
+     * @param creationIndex ウィンドウ作成インデックス
+     */
     public FourierView1D(FourierModel1D model, int creationIndex) {
         super(model, "1D Fourier Transform - Spectrum Manipulation");
 

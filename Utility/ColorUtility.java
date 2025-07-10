@@ -1,18 +1,35 @@
-// 青木先生のjarファイルの逆コンパイル結果で得られたutility
 package Utility;
 
 import java.awt.Color;
 
+/**
+ * カラー変換を行うユーティリティクラス。
+ * RGB、YUV、輝度値間の変換機能を提供します。
+ */
 public class ColorUtility {
+   
+   /**
+    * デフォルトコンストラクタ。
+    */
    public ColorUtility() {
    }
 
+   /**
+    * 輝度値からColor型のカラーを作成します。
+    * @param var0 輝度値
+    * @return 輝度値に対応するColor
+    */
    public static Color colorFromLuminance(double var0) {
       int var2 = convertRGBtoINT(var0, var0, var0);
       Color var3 = new Color(var2);
       return var3;
    }
 
+   /**
+    * RGB配列からColor型のカラーを作成します。
+    * @param var0 RGB値の配列
+    * @return RGB値に対応するColor
+    */
    public static Color colorFromRGB(double[] var0) {
       double var1 = var0[0];
       double var3 = var0[1];
@@ -20,23 +37,47 @@ public class ColorUtility {
       return colorFromRGB(var1, var3, var5);
    }
 
+   /**
+    * RGB値からColor型のカラーを作成します。
+    * @param var0 R値
+    * @param var2 G値
+    * @param var4 B値
+    * @return RGB値に対応するColor
+    */
    public static Color colorFromRGB(double var0, double var2, double var4) {
       int var6 = convertRGBtoINT(var0, var2, var4);
       Color var7 = new Color(var6);
       return var7;
    }
 
+   /**
+    * YUV配列からColor型のカラーを作成します。
+    * @param var0 YUV値の配列
+    * @return YUV値に対応するColor
+    */
    public static Color colorFromYUV(double[] var0) {
       double[] var1 = convertYUVtoRGB(var0);
       Color var2 = colorFromRGB(var1);
       return var2;
    }
 
+   /**
+    * YUV値からColor型のカラーを作成します。
+    * @param var0 Y値
+    * @param var2 U値
+    * @param var4 V値
+    * @return YUV値に対応するColor
+    */
    public static Color colorFromYUV(double var0, double var2, double var4) {
       double[] var6 = new double[]{var0, var2, var4};
       return colorFromYUV(var6);
    }
 
+   /**
+    * INT値をRGB配列に変換します。
+    * @param var0 変換するINT値
+    * @return RGB値の配列
+    */
    public static double[] convertINTtoRGB(int var0) {
       double var1 = (double)(var0 >> 16 & 255) / 255.0;
       double var3 = (double)(var0 >> 8 & 255) / 255.0;
@@ -45,6 +86,11 @@ public class ColorUtility {
       return var7;
    }
 
+   /**
+    * RGB配列をINT値に変換します。
+    * @param var0 RGB値の配列
+    * @return 変換されたINT値
+    */
    public static int convertRGBtoINT(double[] var0) {
       double var1 = var0[0];
       double var3 = var0[1];

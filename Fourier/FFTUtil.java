@@ -1,7 +1,17 @@
 package Fourier;
 
+/**
+ * 高速フーリエ変換（FFT）のユーティリティクラス。
+ * FFT、逆FFT、ビット反転、シフト操作などを提供します。
+ */
 public class FFTUtil {
 
+    /**
+     * 指定されたビット数で整数のビット反転を行います。
+     * @param x ビット反転する整数
+     * @param bits ビット数
+     * @return ビット反転された整数
+     */
     public static int bitReverse(int x, int bits) {
         int y = 0;
         for (int i = 0; i < bits; i++) {
@@ -11,6 +21,10 @@ public class FFTUtil {
         return y;
     }
 
+    /**
+     * データ配列をビット反転順序に並び替えます。
+     * @param data 並び替える複素数配列
+     */
     public static void bitReverseReorder(Complex[] data) {
         int N = data.length;
         int bits = Integer.numberOfTrailingZeros(N);
@@ -25,9 +39,13 @@ public class FFTUtil {
     }
 
     /**
-     * [高速化] FFTメソッド
-     * - 事前計算された回転因子(twiddles)テーブルを使用
-     * - ミュータブルなComplexオブジェクトでインプレース計算を行い、オブジェクト生成を回避
+     * 再帰的FFTメソッド
+     * 事前計算された回転因子(twiddles)テーブルを使用し、
+     * ミュータブルなComplexオブジェクトでインプレース計算を行います。
+     * @param data FFTを適用する複素数配列
+     * @param start 開始インデックス
+     * @param n 処理するデータ数
+     * @param twiddles 事前計算された回転因子テーブル
      */
     public static void fftRecursive(Complex[] data, int start, int n, Complex[] twiddles) {
         if (n == 1) return;
@@ -38,13 +56,13 @@ public class FFTUtil {
             int i = start + k;
             int j = i + half;
             
-            // [高速化] 事前計算した回転因子テーブルを使用
+            // 事前計算した回転因子テーブルを使用
             Complex w = twiddles[k * stride];
             
             Complex u = data[i];
             Complex t = data[j];
 
-            // [高速化] ミュータブルなComplexメソッドを使用してオブジェクト生成を回避
+            // ミュータブルなComplexメソッドを使用してオブジェクト生成を回避
             // バタフライ演算:
             // data[i] = u + t
             // data[j] = w * (u - t)
@@ -69,16 +87,21 @@ public class FFTUtil {
         fftRecursive(data, start + half, half, twiddles);
     }
     
-    // 順変換FFTの呼び出し用ラッパー
+    /**
+     * 順変換FFTの呼び出し用ラッパー
+     * @param data FFTを適用する複素数配列
+     * @param twiddles 事前計算された回転因子テーブル
+     */
     public static void fft(Complex[] data, Complex[] twiddles) {
         fftRecursive(data, 0, data.length, twiddles);
         bitReverseReorder(data);
     }
 
     /**
-     * [高速化] IFFTメソッド
-     * - 共役化ループを廃止し、逆回転因子で直接計算
-     * - 最後にデータ数でスケーリング
+     * 逆FFT（IFFT）メソッド
+     * 共役化ループを廃止し、逆回転因子で直接計算し、最後にデータ数でスケーリングします。
+     * @param data IFFTを適用する複素数配列
+     * @param invTwiddles 逆変換用の回転因子テーブル
      */
     public static void ifft(Complex[] data, Complex[] invTwiddles) {
         // 逆変換は、順変換と同じアルゴリズムで逆回転因子を使うだけ
@@ -92,7 +115,10 @@ public class FFTUtil {
         }
     }
 
-    // --- Shift methods (変更なし) ---
+    /**
+     * 1次元実数配列のシフト操作を行います。
+     * @param data シフトする実数配列
+     */
     public static void shift(double[] data) {
         int half = data.length / 2;
         for (int i = 0; i < half; i++) {
@@ -102,6 +128,10 @@ public class FFTUtil {
         }
     }
     
+    /**
+     * 1次元複素数配列のシフト操作を行います。
+     * @param data シフトする複素数配列
+     */
     public static void shift(Complex[] data) {
         int half = data.length / 2;
         for (int i = 0; i < half; i++) {
@@ -111,6 +141,10 @@ public class FFTUtil {
         }
     }
 
+    /**
+     * 2次元実数配列のシフト操作を行います。
+     * @param data シフトする2次元実数配列
+     */
     public static void shift(double[][] data) {
         int rows = data.length;
         int cols = data[0].length;
@@ -128,6 +162,10 @@ public class FFTUtil {
         }
     }
     
+    /**
+     * 2次元複素数配列のシフト操作を行います。
+     * @param data シフトする2次元複素数配列
+     */
     public static void shift(Complex[][] data) {
         int rows = data.length;
         int cols = data[0].length;

@@ -1,14 +1,15 @@
 package Fourier.view;
 
-import Fourier.model.FourierModel;
 import Fourier.model.FourierModel2D;
-import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
-public class FourierView2D extends FourierView implements PropertyChangeListener {
+/**
+ * 2次元フーリエ変換の結果を表示するビュークラス。
+ * オリジナル画像、パワースペクトル、再構成画像、ユーザー変更スペクトルの4つのパネルを表示します。
+ */
+public class FourierView2D extends FourierView {
 
     private static final String KEY_ORIGINAL_IMAGE = "Original Image";
     private static final String KEY_ORIGINAL_SPECTRUM = "Original Power Spectrum (Log Scale)";
@@ -23,7 +24,11 @@ public class FourierView2D extends FourierView implements PropertyChangeListener
     private double initialSpectrumLogMin;
     private double initialSpectrumLogMax;
 
-    // --- コンストラクタ ---
+    /**
+     * 2次元フーリエ変換ビューを作成します。
+     * @param model 2次元フーリエ変換モデル
+     * @param creationIndex ウィンドウ作成インデックス
+     */
     public FourierView2D(FourierModel2D model, int creationIndex) {
         super(model, "2D Fourier Transform - Spectrum Manipulation");
         
