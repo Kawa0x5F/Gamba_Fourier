@@ -1,15 +1,12 @@
 package Fourier.model;
 
 import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import Fourier.Complex;
 import Fourier.FFTUtil;
-import Fourier.view.FourierView2D;
 
 /**
  * 2次元フーリエ変換のモデルクラス。

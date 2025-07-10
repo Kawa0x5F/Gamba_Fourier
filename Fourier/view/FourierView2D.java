@@ -1,7 +1,8 @@
 package Fourier.view;
 
 import Fourier.model.FourierModel2D;
-import java.awt.*;
+import java.awt.Graphics;
+import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 

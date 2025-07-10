@@ -4,9 +4,14 @@ import javax.swing.SwingUtilities;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.concurrent.atomic.AtomicInteger;
-import Fourier.model.*;
-import Fourier.view.*;
-import Fourier.controller.*;
+import Fourier.model.FourierModel1D;
+import Fourier.model.FourierModel2D;
+import Fourier.view.FourierView;
+import Fourier.view.FourierView1D;
+import Fourier.view.FourierView2D;
+import Fourier.controller.FourierController1D;
+import Fourier.controller.FourierController2D;
+import Fourier.controller.MenuController;
 import Fourier.FourierData;
 import Fourier.FileIO;
 

@@ -5,8 +5,11 @@ import Fourier.model.FourierModel1D;
 import Fourier.model.FourierModel2D;
 import Fourier.example.Example;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JPopupMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JFileChooser;
+import java.awt.Component;
 
 /**
  * アプリケーションの右クリックメニュー機能を提供するクラス。

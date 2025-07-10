@@ -2,7 +2,12 @@ package Fourier.view;
 
 import Fourier.model.FourierModel1D;
 
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Color;
+import java.awt.Point;
 import java.beans.PropertyChangeEvent;
 import javax.swing.JPanel;
 
