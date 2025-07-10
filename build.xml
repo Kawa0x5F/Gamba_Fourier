@@ -92,6 +92,8 @@
 			<arg value="${copyright}" />
 			<arg value="--mac-package-identifier" />
 			<arg value="${mac.bundle.id}" />
+			<arg value="--icon" />
+			<arg path="${basedir}/Resources/Fourier_Icon.icns" />
 			</exec>
 		<echo>Successfully created ${ant.project.name}.app in '${build.dir}' directory.</echo>
 	</target>
