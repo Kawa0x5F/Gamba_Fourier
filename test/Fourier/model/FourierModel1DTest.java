@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import Fourier.Complex;
+import Fourier.FFTUtil;
 
 /**
  * FourierModel1DクラスのFFTおよびIFFTの機能をテストするクラスです。
@@ -33,8 +34,7 @@ class FourierModel1DTest {
      * 理論的なFFT結果: [10, -2+2i, -2, -2-2i]
      * </p>
      * <p>
-     * 注: このクラスのfftメソッドは、計算後にビット反転並べ替えが必要です。
-     * そのため、fft()の後にbitReverseReorder()を呼び出して結果を検証します。
+     * 注: FFTUtilのstaticメソッドを直接使用してテストします。
      * </p>
      */
     @Test
@@ -47,7 +47,6 @@ class FourierModel1DTest {
             new Complex(3, 0),
             new Complex(4, 0)
         };
-        fourierModel.setComplexOriginData(inputData);
 
         // 期待される結果 (理論値)
         Complex[] expectedOutput = {
@@ -58,16 +57,16 @@ class FourierModel1DTest {
         };
 
         // 2. 実行: FFTを計算
-        // この実装では、fft()の後にビット反転並べ替えが必要
-        fourierModel.fft(0, inputData.length);
-        fourierModel.bitReverseReorder();
-        Complex[] actualOutput = fourierModel.getComplexResult();
+        // inputDataをコピーしてFFTを実行
+        Complex[] testData = inputData.clone();
+        FFTUtil.fft(testData, 0, testData.length);
+        FFTUtil.bitReverseReorder(testData);
 
         // 3. 検証: 結果が期待値と一致するか確認
-        assertEquals(expectedOutput.length, actualOutput.length, "配列の長さが一致しません");
+        assertEquals(expectedOutput.length, testData.length, "配列の長さが一致しません");
         for (int i = 0; i < expectedOutput.length; i++) {
-            assertEquals(expectedOutput[i].getReal(), actualOutput[i].getReal(), DELTA, "Index " + i + " の実数部が一致しません");
-            assertEquals(expectedOutput[i].getImaginary(), actualOutput[i].getImaginary(), DELTA, "Index " + i + " の虚数部が一致しません");
+            assertEquals(expectedOutput[i].getReal(), testData[i].getReal(), DELTA, "Index " + i + " の実数部が一致しません");
+            assertEquals(expectedOutput[i].getImaginary(), testData[i].getImaginary(), DELTA, "Index " + i + " の虚数部が一致しません");
         }
     }
 
@@ -93,68 +92,61 @@ class FourierModel1DTest {
             new Complex(7, 0),
             new Complex(8, 0)
         };
-        fourierModel.setComplexOriginData(originalData);
 
         // 2. 実行: FFT -> IFFT
         // まず順変換 (FFT)
-        fourierModel.fft(0, originalData.length);
-        fourierModel.bitReverseReorder();
+        Complex[] testData = originalData.clone();
+        FFTUtil.fft(testData, 0, testData.length);
+        FFTUtil.bitReverseReorder(testData);
         
         // 次に逆変換 (IFFT)
-        fourierModel.ifft();
-        Complex[] resultData = fourierModel.getComplexResult();
+        FFTUtil.ifft(testData);
 
         // 3. 検証: 逆変換後のデータが元のデータと一致するか確認
-        assertEquals(originalData.length, resultData.length, "配列の長さが一致しません");
+        assertEquals(originalData.length, testData.length, "配列の長さが一致しません");
         for (int i = 0; i < originalData.length; i++) {
-            assertEquals(originalData[i].getReal(), resultData[i].getReal(), DELTA, "Index " + i + " の実数部が一致しません");
-            assertEquals(originalData[i].getImaginary(), resultData[i].getImaginary(), DELTA, "Index " + i + " の虚数部が一致しません");
+            assertEquals(originalData[i].getReal(), testData[i].getReal(), DELTA, "Index " + i + " の実数部が一致しません");
+            assertEquals(originalData[i].getImaginary(), testData[i].getImaginary(), DELTA, "Index " + i + " の虚数部が一致しません");
         }
     }
-}
-
-// 注意: このテストをコンパイル・実行するには、
-// 以下の内容を想定したComplexクラスが必要です。
-
-/*
-package Fourier.model;
-
-public class Complex {
-    private final double real;
-    private final double imag;
-
-    public Complex(double real, double imag) {
-        this.real = real;
-        this.imag = imag;
-    }
-
-    public double getReal() { return real; }
-    public double getImag() { return imag; }
-
-    public Complex add(Complex b) {
-        return new Complex(this.real + b.real, this.imag + b.imag);
+    
+    /**
+     * FourierModel1Dのコンストラクタとセッターをテストします。
+     */
+    @Test
+    @DisplayName("FourierModel1Dの初期化テスト")
+    void testInitialization() {
+        // デフォルトコンストラクタでモデルが初期化されることを確認
+        assertNotNull(fourierModel);
+        
+        // 初期データでコンストラクタを使用するテスト
+        double[] initialData = {1.0, 2.0, 3.0, 4.0};
+        FourierModel1D modelWithData = new FourierModel1D(initialData);
+        
+        assertNotNull(modelWithData);
+        assertArrayEquals(initialData, modelWithData.getInitialOriginData(), DELTA);
     }
     
-    public Complex sub(Complex b) {
-        return new Complex(this.real - b.real, this.imag - b.imag);
-    }
-
-    public Complex mul(Complex b) {
-        double real = this.real * b.real - this.imag * b.imag;
-        double imag = this.real * b.imag + this.imag * b.real;
-        return new Complex(real, imag);
-    }
-
-    public Complex conjugate() {
-        return new Complex(this.real, -this.imag);
-    }
-
-    public Complex scale(double alpha) {
-        return new Complex(this.real * alpha, this.imag * alpha);
-    }
-    
-    public double magnitude() {
-        return Math.sqrt(real * real + imag * imag);
+    /**
+     * マウスポイントからの計算をテストします。
+     */
+    @Test
+    @DisplayName("マウスポイントからの計算テスト")
+    void testComputeFromMousePoint() {
+        // 初期データを設定
+        double[] initialData = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+        FourierModel1D modelWithData = new FourierModel1D(initialData);
+        
+        // マウスポイントでの計算をトリガー
+        java.awt.Point mousePoint = new java.awt.Point(100, 100);
+        modelWithData.computeFromMousePoint(mousePoint, Boolean.FALSE);
+        
+        // 計算ポイントが正しく設定されているか確認
+        assertEquals(mousePoint, modelWithData.getLastCalculationPoint());
+        assertEquals(false, modelWithData.getIsAltDown());
+        
+        // Alt+クリックのテスト
+        modelWithData.computeFromMousePoint(mousePoint, Boolean.TRUE);
+        assertEquals(true, modelWithData.getIsAltDown());
     }
 }
-*/
