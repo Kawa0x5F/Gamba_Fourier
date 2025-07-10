@@ -4,7 +4,6 @@ package Fourier;
  * 複素数を表現するクラス
  * 四則演算・絶対値計算・指数関数$e^c$の実装を提供する
  * FFT計算中のオブジェクト生成を避けるため、ミュータブル(可変)に変更されています。
- * @author Yuichi Kawasaki
  */
 public class Complex {
     private double real; // 実部
