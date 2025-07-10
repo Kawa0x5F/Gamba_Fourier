@@ -57,6 +57,14 @@ public abstract class FourierView implements PropertyChangeListener {
     }
     
     /**
+     * フレームを取得します。
+     * @return JFrameオブジェクト
+     */
+    public JFrame getFrame() {
+        return this.frame;
+    }
+    
+    /**
      * パネルをコンテンツパネルに追加します。
      * @param name パネル名
      * @param panel 追加するパネル

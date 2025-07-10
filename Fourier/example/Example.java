@@ -1,6 +1,9 @@
 package Fourier.example;
 
 import javax.swing.SwingUtilities;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.concurrent.atomic.AtomicInteger;
 import Fourier.model.*;
 import Fourier.view.*;
 import Fourier.controller.*;
@@ -17,6 +20,8 @@ public class Example {
     private static final int WINDOW_OFFSET = 30;
     /** 作成したウィンドウの数を数える静的カウンター */
     private static int windowCreationCount = 0;
+    /** 現在開いているウィンドウの数を追跡するカウンター */
+    private static final AtomicInteger openWindowCount = new AtomicInteger(0);
 
     /**
      * アプリケーションのエントリーポイント。
@@ -25,8 +30,12 @@ public class Example {
      */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            // 初期データで1Dデモを開始
+            // 1Dデモ - 全ての信号を表示
             restart1DDemoWithData(FourierData.dataSampleWave());
+            restart1DDemoWithData(FourierData.dataChirpSignal());
+            restart1DDemoWithData(FourierData.dataSawtoothWave());
+            restart1DDemoWithData(FourierData.dataSquareWave());
+            restart1DDemoWithData(FourierData.dataTriangleWave());
 
             // 初期データで2Dデモを開始
             double[][][] initialColorData = FileIO.readSignalFromImage("/JosephFourier2.jpg");
@@ -49,6 +58,9 @@ public class Example {
         FourierModel1D model1D = new FourierModel1D(signalData);
         FourierView1D view1D = new FourierView1D(model1D, windowCreationCount);
         windowCreationCount++;
+        
+        // ウィンドウ終了処理を追加
+        addWindowCloseListener(view1D);
         
         // コントローラの登録
 
@@ -76,6 +88,9 @@ public class Example {
         FourierView2D view2D = new FourierView2D(model2D, windowCreationCount);
         windowCreationCount++;
         
+        // ウィンドウ終了処理を追加
+        addWindowCloseListener(view2D);
+        
         // コントローラの登録
 
         // 1. スペクトル計算用コントローラを特定のパネルに登録
@@ -88,5 +103,33 @@ public class Example {
         view2D.addMouseListenerToAllPanels(menuController2D);
         
         System.out.println("2D Demo Window Initialized.");
+    }
+    
+    /**
+     * ウィンドウ終了時のリスナーを追加するヘルパーメソッド
+     * @param view ウィンドウリスナーを追加するビュー
+     */
+    private static void addWindowCloseListener(FourierView view) {
+        // ウィンドウカウンターを増加
+        openWindowCount.incrementAndGet();
+        
+        // ウィンドウの位置をオフセットして設定
+        int currentOffset = windowCreationCount * WINDOW_OFFSET;
+        view.getFrame().setLocation(currentOffset, currentOffset);
+        
+        view.getFrame().addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                // ウィンドウカウンターを減少
+                int remainingWindows = openWindowCount.decrementAndGet();
+                System.out.println("ウィンドウが閉じられました。残り: " + remainingWindows + " ウィンドウ");
+                
+                // 全てのウィンドウが閉じられた場合、アプリケーションを終了
+                if (remainingWindows <= 0) {
+                    System.out.println("全てのウィンドウが閉じられました。アプリケーションを終了します。");
+                    System.exit(0);
+                }
+            }
+        });
     }
 }
